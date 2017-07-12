@@ -1,0 +1,67 @@
+<div style="display: inline-block; position: relative;"
+     data-uk-dropdown="{pos: 'bottom-right', mode: 'click'}" aria-haspopup="true" aria-expanded="false">
+    <i class="md-icon material-icons" data-uk-tooltip title="{{btnLabel}}">settings</i>
+
+    <div class="uk-dropdown uk-text-left">
+        <div>
+            <ul class="uk-nav uk-nav-dropdown uk-panel">
+                <li class="uk-nav-header">Pagesize</li>
+                <li style="height: 5px;"></li>
+                <li>
+                    <div class="icheck-inline uk-width-medium-1-2" ng-repeat="(ps_key, ps) in pagesizes"
+                         style="margin: 10px 0;">
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                        <label class="inline-label">
+                            <input type="radio" icheck ng-model="request.offset" ng-value="ps.value" name="pagesize"/>
+                            {{ps.label}}
+                        </label>
+                    </div>
+                </li>
+                <li class="uk-nav-divider"></li>
+                <li class="uk-nav-header">Columns</li>
+                <li style="height: 5px;"></li>
+                <li>
+                    <a ng-click="toggleAll(true)">
+                        <i class="material-icons" style="font-size: 18px !important;">done_all</i>
+                        &nbsp;&nbsp;&nbsp;Select all
+                    </a>
+                </li>
+                <li>
+                    <a ng-click="toggleAll(false)">
+                        <i class="material-icons" style="font-size: 18px !important;">filter_none</i>
+                        &nbsp;&nbsp;&nbsp;Select none
+                    </a>
+                </li>
+                <li style="height: 5px;"></li>
+                <li ng-show="col.can_hide" ng-repeat="(col_idx, col) in columns">
+                    <a class="icon-item">
+                        <label>
+                            &nbsp;&nbsp;&nbsp;<input ng-model="col.display" icheck type="checkbox">&nbsp;&nbsp;&nbsp;
+                            <span ng-bind="col.setting_title ? col.setting_title : col.title"></span>
+                        </label>
+                    </a>
+                </li>
+                <li class="uk-nav-divider"></li>
+                <li class="uk-nav-header">Theme</li>
+                <li style="height: 5px;"></li>
+                <li style="padding: 0 20px;">
+                    <i class="material-icons" style="font-size: 18px !important;">font_download</i>&nbsp;Font
+                    size<br/>
+                    <div style="height: 5px;"></div>
+                    <div class="uk-grid" data-uk-grid-margin>
+                        <div class="uk-width-medium-8-10">
+                            <div ion-slider ng-model="theme.font_size" min="8" max="36"></div>
+                        </div>
+                        <div class="uk-width-medium-2-10" style="padding-left: 10px;">
+                            <i ng-click="theme.font_size = 14"
+                               class="md-icon material-icons"
+                               data-uk-tooltip=""
+                               title="Reset"
+                               style="font-size: 18px !important;">autorenew</i>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>

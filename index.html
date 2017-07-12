@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="vi-VN" dir="LTR" xmlns:fb="http://www.facebook.com/2008/fbml" ng-app="testApp">
+<head>
+    <base href="/hl-table/" />
+    <title>HL-Table</title>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <script src="bower_components/angular/angular.min.js?v=1.6.4"></script>
+    <script src="dist/hl.directives.js?v=1.0.0"></script>
+    <script src="app.js?v=1.0.0"></script>
+</head>
+<body ng-controller="testCtrl">
+    <h1>HL-Table</h1>
+    <a ng-click="config.$testReload()">Test reload</a>
+    <hl-table columns="columns" config="config"></hl-table>
+</body>
+</html>

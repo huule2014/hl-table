@@ -2,7 +2,8 @@
   "name": "hl-table",
   "version": "1.0.0",
   "dependencies": {
-    "jquery": "https://github.com/jquery/jquery.git#^3.2.1"
+    "jquery": "https://github.com/jquery/jquery.git#^3.2.1",
+    "angular": "1.6.4"
   },
   "devDependencies": {}
 }
