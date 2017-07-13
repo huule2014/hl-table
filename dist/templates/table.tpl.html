@@ -1,14 +1,13 @@
 <div class="hl-table-container" ng-cloak>
     <hl-table-setting columns="columns" config="config"></hl-table-setting>
     <!-- hl-table -->
+    {{columns}}
     <table id="{{config.$tableName}}" class="hl-table">
         <!-- Build header -->
-        <thead>
-        <tr>
-            <th ng-repeat="(colIdx, col in columns)"></th>
-        </tr>
-        </thead>
+        <hl-table-header columns="columns" config="config"></hl-table-header>
         <tbody ng-transclude></tbody>
+        <!-- Build footer -->
+        <hl-table-header columns="columns" config="config"></hl-table-header>
     </table>
     <!-- End hl-table -->
 </div>
