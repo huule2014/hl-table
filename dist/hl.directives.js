@@ -6,8 +6,6 @@
     var appPath = null, templatePath = null;
 
     angular.module('hlTableModule', [])
-        .run(function(){
-        })
         .provider('hlTableConfig', function(){
             return {
                 getAppPath: function(){
@@ -43,16 +41,44 @@
                 }
             }
         })
-        .factory('hlDataHelper', function ($rootScope, $q, $timeout, $http, $log) {
+        .factory('hlElementHelper', function($timeout, $log){
+
+            function makeID(length) {
+                var text = "";
+                var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+                if(angular.isUndefined(length) || length < 0){
+                    length = 28;
+                }
+
+                for (var i = 0; i < length; i++)
+                    text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+                return text;
+            }
+
+            return {
+                generateID: function(tableName){
+                    if(angular.isDefined(tableName)){
+                        return 'hl-table-' + tableName;
+                    }else{
+                        return 'hl-table-' + makeID();
+                    }
+                }
+            }
+        })
+        .factory('hlDataHelper', function ($rootScope, $q, $timeout, $http, $log, hlElementHelper) {
             var reloadingData = [];
 
             return {
                 run: function (config) {
                     if(angular.isDefined(config) && angular.isDefined(config.name)){
-                        var loadingVar = '$' + config.name + 'DataLoading',
-                            listVar = '$' + config.name + 'List',
-                            totalRowsVar = '$' + config.name + 'TotalRows',
-                            reloadFunctionName = '$' + config.name + 'Reload';
+                        var loadingVar = '$dataLoading',
+                            listVar = '$list',
+                            totalRowsVar = '$totalRows',
+                            reloadFunctionName = '$reloadData',
+                            tableNameVar = '$tableName',
+                            selectedItemsVar = '$selectedItems';
                         
                         if (angular.isDefined(config.name) 
                         && reloadingData.indexOf(config.name) == -1 
@@ -68,6 +94,24 @@
                             if (angular.isUndefined(config.params.firstLoad)) {
                                 config.params.firstLoad = true;
                             }
+
+                            /** Set table name */
+                            if(angular.isUndefined(config[tableNameVar])){
+                                config[tableNameVar] = hlElementHelper.generateID(config.name);
+                            }
+
+                            /** Set selected items */
+                            if(angular.isUndefined(config[selectedItemsVar])){
+                                config[selectedItemsVar] = [];
+                            }
+
+                            /** Default params */
+                            var defaultParams = {
+                                offset: 20,
+                                ascDesc: 'ASC'
+                            };
+
+                            angular.extend(config.params, defaultParams);
 
                             var defer = $q.defer();
 
@@ -103,12 +147,12 @@
 
                                         /** Check order_by */
                                         if (angular.isDefined(result.paramSession.orderBy)) {
-                                            config.params.orderBy = result.filter.orderBy;
+                                            config.params.orderBy = result.paramSession.orderBy;
                                         }
 
                                         /** Check asc_desc */
                                         if (angular.isDefined(result.paramSession.ascDesc)) {
-                                            config.params.ascDesc = result.filter.ascDesc;
+                                            config.params.ascDesc = result.paramSession.ascDesc;
                                         }
                                     }
                                 }
@@ -126,8 +170,6 @@
                                     config[loadingVar] = false;
                                 }, 500);
                             });
-                            
-
 
                             if(angular.isUndefined(config[reloadFunctionName])){
                                 config[reloadFunctionName] = function(){
@@ -210,141 +252,6 @@
                 },
                 templateUrl: hlTableConfig.templatePath + 'table.tpl.html',
                 link: function ($scope, $element, $attrs) {
-                    if(angular.isDefined($scope.config) && angular.isDefined($scope.config.name)){
-                        $scope.tableName = "hltable-" + $scope.config.name;
-                    }
-                }
-            }
-        })
-        .directive('hl222Table', function ($rootScope, $http, $timeout, hlTableConfig) {
-            return {
-                restrict: 'E',
-                transclude: true,
-                replace: true,
-                scope: {
-                    columns: '=',
-                    config: '=',
-                    listData: '=',
-                    totalRows: '=',
-                    selectedList: '=',
-                    customFilter: '=',
-                    customToolbars: '=',
-                    showFilter: '@',
-                    noDataMsg: '@',
-                    firstLoad: '@',
-                    overflowContainer: '@',
-                    reloadFunction: '&'
-                },
-                templateUrl: hlTableConfig.templatePath + 'table.tpl.html',
-                link: function (scope, element, attrs) {
-                    var firstLoad = angular.isDefined(scope.firstLoad) ? scope.firstLoad : true;
-
-                    scope.table_name = attrs.listData;
-                    scope.showList = false;
-
-                    if (angular.isDefined(scope.showFilter)) {
-                        scope.show_filter = scope.showFilter == 'true' ? true : false;
-                    } else {
-                        scope.show_filter = true;
-                    }
-
-                    if (angular.isUndefined(scope.overflowContainer)) {
-                        scope.overflowContainer = true;
-                    }
-
-                    scope.reloadData = function () {
-                        if (angular.isDefined(attrs.reloadFunction)) {
-                            //console.log('Table');
-                            scope.reloadFunction();
-
-                            $timeout(function () {
-                                scope.showList = true;
-                            }, 1000);
-                        } else {
-                            console.error('travisTable: reload function not found');
-                        }
-                    };
-
-                    if (firstLoad === 'true' || firstLoad === true) {
-                        $timeout(function () {
-                            scope.reloadData();
-                        }, 500);
-                    }
-
-                    scope.$watch('config.request.dataLoading', function (newVal) {
-                        scope.dataLoading = newVal;
-                    });
-
-                }
-            }
-        }).directive('travisTableAdv', function ($rootScope, $http, $timeout) {
-            return {
-                restrict: 'E',
-                transclude: true,
-                replace: true,
-                scope: {
-                    columns: '=',
-                    config: '=',
-                    listData: '=',
-                    totalRows: '=',
-                    selectedList: '=',
-                    customFilter: '=',
-                    showFilter: '=',
-                    customToolbars: '=',
-                    noDataMsg: '@',
-                    firstLoad: '@',
-                    overflowContainer: '@',
-                    filterControlDisplay: '@',
-                    tableTitle: '@',
-                    reloadFunction: '&'
-                },
-                templateUrl: 'app/libs/travis/travisTableAdv.tpl.html',
-                link: function (scope, element, attrs) {
-                    var firstLoad = angular.isDefined(scope.firstLoad) ? scope.firstLoad : true;
-
-                    scope.table_name = attrs.listData;
-
-                    if (angular.isUndefined(scope.filterControlDisplay)) {
-                        scope.filterControlDisplay = true;
-                    }
-
-                    if (angular.isDefined(scope.showFilter)) {
-                        if (scope.showFilter == true || scope.showFilter == 'true') {
-                            scope.showFilter = true;
-                        } else {
-                            scope.showFilter = false;
-                        }
-                    } else {
-                        scope.showFilter = true;
-                    }
-
-                    if (angular.isUndefined(scope.overflowContainer)) {
-                        scope.overflowContainer = true;
-                    }
-
-                    scope.reloadData = function () {
-                        if (angular.isDefined(attrs.reloadFunction)) {
-                            //console.log('TableAdv');
-                            scope.reloadFunction();
-
-                            $timeout(function () {
-                                scope.show_list = true;
-                            }, 1000);
-                        } else {
-                            console.error('travisTable: reload function not found');
-                        }
-                    };
-
-                    if (firstLoad === 'true' || firstLoad === true) {
-                        $timeout(function () {
-                            scope.reloadData();
-                        }, 500);
-                    }
-
-                    scope.$watch('config.request.dataLoading', function (newVal) {
-                        scope.dataLoading = newVal;
-                    });
-
                 }
             }
         })
@@ -559,7 +466,7 @@
                 }
             }
         })
-        .directive('hlTableSetting', function ($rootScope, $timeout, $log, hlTableConfig) {
+        .directive('hlTableSetting', function ($rootScope, $timeout, $log, $document, hlTableConfig) {
             return {
                 restrict: 'E',
                 scope: {
@@ -569,7 +476,7 @@
                 templateUrl: hlTableConfig.templatePath + 'setting.tpl.html',
                 link: function ($scope, $element, $attrs) {
                     if(angular.isDefined($scope.config) && angular.isDefined($scope.config.name)){
-                        var tableName = $scope.config.name;
+                        var tableName = '#' + $scope.config.$tableName;
 
                         $scope.theme = {
                             fontSize: 14
@@ -582,8 +489,8 @@
                             {label: '100', value: 100}
                         ];
 
-                        function changeFontSize(fontSize) {
-                            var table = angular.element(("#hltable-" + tableName));
+                        var changeFontSize = function(fontSize) {
+                            var table = $document.find(tableName);
                             table.find('tbody').css({
                                 'font-size': fontSize
                             });
@@ -596,8 +503,6 @@
                         });
 
                         var defaultColumn = {
-                            field: null,
-                            label: "No label",
                             display: true,
                             canHide: true,
                             canFilter: true,
@@ -608,7 +513,7 @@
                         $scope.setupColumns = function () {
                             if (angular.isDefined($scope.columns) && angular.isArray($scope.columns)) {
                                 angular.forEach($scope.columns, function (col, idx) {
-                                    col = angular.extend(col, defaultColumn);
+                                    angular.extend(col, defaultColumn);
                                 });
                             } else {
                                 $log.error('[hlTableSetting] >> columns is undefined.');
