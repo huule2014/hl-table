@@ -4,7 +4,9 @@
   "dependencies": {
     "jquery": "https://github.com/jquery/jquery.git#^3.2.1",
     "angular": "1.6.4",
-    "semantic": "semantic-ui#^2.2.11"
+    "semantic": "semantic-ui#^2.2.11",
+    "semantic-ui-form": "^2.2.11",
+    "oclazyload": "^1.1.0"
   },
   "devDependencies": {}
 }

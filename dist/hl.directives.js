@@ -1,11 +1,36 @@
 /**
- * Created by Win 8.1 Version 2 on 19/05/2016.
+ * oclazyload - Load modules on demand (lazy load) with angularJS
+ * @version v1.0.10
+ * @link https://github.com/huule2014/hl-table
+ * @license MIT
+ * @author Olivier Combe <olivier.combe@gmail.com>
  */
 (function () {
     'use strict';
     var appPath = null, templatePath = null;
 
-    angular.module('hlTableModule', [])
+    angular.module('hlTableModule', ['oc.lazyLoad'])
+        .config(function ($ocLazyLoadProvider) {
+            $ocLazyLoadProvider.config({
+                debug: false,
+                events: false,
+                modules: [
+                    {
+                        name: 'UIForm',
+                        files: [
+                            'bower_components/semantic-ui-form/form.min.css',
+                            'bower_components/semantic-ui-form/form.min.js'
+                        ],
+                        serie: true,
+                        cache: false
+                    }
+                ]
+            });
+        })
+        .run(function ($ocLazyLoad) {
+            // Load default ocLazyLoad modules
+            $ocLazyLoad.load('UIForm');
+        })
         .provider('hlTableConfig', function () {
             return {
                 getAppPath: function () {
@@ -21,7 +46,8 @@
                 $get: function () {
                     return {
                         appPath: appPath,
-                        templatePath: templatePath
+                        templatePath: templatePath,
+                        limitToShow: 50
                     }
                 }
             }
@@ -42,28 +68,26 @@
             }
         })
         .factory('hlElementHelper', function ($timeout, $log) {
-
-            function makeID(length) {
-                var text = "";
-                var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-                if (angular.isUndefined(length) || length < 0) {
-                    length = 28;
-                }
-
-                for (var i = 0; i < length; i++)
-                    text += possible.charAt(Math.floor(Math.random() * possible.length));
-
-                return text;
-            }
-
             return {
                 generateID: function (tableName) {
                     if (angular.isDefined(tableName)) {
                         return 'hl-table-' + tableName;
                     } else {
-                        return 'hl-table-' + makeID();
+                        return 'hl-table-' + this.makeID();
                     }
+                },
+                makeID: function (length) {
+                    var text = "";
+                    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+                    if (angular.isUndefined(length) || length < 0) {
+                        length = 28;
+                    }
+
+                    for (var i = 0; i < length; i++)
+                        text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+                    return text;
                 }
             }
         })
@@ -74,7 +98,7 @@
                 run: function (config) {
                     if (angular.isDefined(config) && angular.isDefined(config.name)) {
                         var loadingVar = '$dataLoading',
-                            listVar = '$list',
+                            listVar = '$dataList',
                             totalRowsVar = '$totalRows',
                             reloadFunctionName = '$reloadData',
                             tableNameVar = '$tableName',
@@ -107,7 +131,7 @@
 
                             /** Default params */
                             var defaultParams = {
-                                offset: 20,
+                                offset: 25,
                                 ascDesc: 'ASC'
                             };
 
@@ -125,6 +149,10 @@
                                     // Set list
                                     if (angular.isDefined(result.dataList)) {
                                         config[listVar] = result.dataList;
+                                    }
+
+                                    if (angular.isDefined(result.totalRows)) {
+                                        config[totalRowsVar] = result.totalRows;
                                     }
 
                                     if (angular.isDefined(config.params) && angular.isDefined(config.params.firstLoad) && config.params.firstLoad) {
@@ -237,6 +265,20 @@
                     } else {
                         $log.error('[hlDataHelper] >> No config or name.');
                     }
+                },
+                sortField: function (config, field) {
+                    if (field == config.params.orderBy) {
+                        if (config.params.ascDesc == 'ASC') {
+                            config.params.ascDesc = 'DESC';
+                        } else {
+                            config.params.ascDesc = 'ASC';
+                        }
+                    } else {
+                        config.params.orderBy = field;
+                        config.params.ascDesc = 'DESC';
+                    }
+
+                    config.$reloadData();
                 }
             }
         })
@@ -245,7 +287,7 @@
                 restrict: 'E',
                 transclude: true,
                 replace: true,
-                $scope: {
+                scope: {
                     columns: '=',
                     config: '=',
                     messages: '='
@@ -255,32 +297,76 @@
                 }
             }
         })
-        .directive('travisRow', function () {
+        .directive('hlTableHeader', function ($rootScope, $timeout, $log, hlTableConfig, hlDataHelper) {
             return {
-                restrict: 'E',
-                transclude: true,
+                restrict: 'A',
                 replace: true,
-                $scope: {
-                    selectedList: '=',
-                    travisSelected: '='
+                scope: {
+                    columns: '=',
+                    config: '='
                 },
-                template: '<tr ng-class="{\'selected\': travisSelected}" ng-transclude></tr>',
-                link: function ($scope, element, attrs) {
-                    var allowAttrs = ['id', 'class', 'style'];
-                    angular.forEach(allowAttrs, function (allowAttr) {
-                        if (angular.isDefined(attrs[allowAttr])) {
-                            element.attr(allowAttr, attrs[allowAttr]);
+                templateUrl: hlTableConfig.templatePath + 'header.tpl.html',
+                link: function ($scope, $element, $attrs) {
+                    $scope.sortField = function (field) {
+                        hlDataHelper.sortField($scope.config, field);
+                    };
+                }
+            }
+        })
+        .directive('hlTableFooter', function ($rootScope, $timeout, $log, hlTableConfig, hlDataHelper) {
+            return {
+                restrict: 'A',
+                replace: true,
+                scope: {
+                    columns: '=',
+                    config: '='
+                },
+                templateUrl: hlTableConfig.templatePath + 'footer.tpl.html',
+                link: function ($scope, $element, $attrs) {
+                    angular.element($element).hide();
+
+                    $scope.sortField = function (field) {
+                        hlDataHelper.sortField($scope.config, field);
+                    };
+
+                    $scope.$watch('config.params.offset', function (newVal) {
+                        if (angular.isDefined(hlTableConfig.limitToShow)) {
+                            if (parseInt(newVal) >= hlTableConfig.limitToShow) {
+                                angular.element($element).show();
+                            } else {
+                                angular.element($element).hide();
+                            }
                         }
                     });
                 }
             }
         })
-        .directive('travisColumn', function ($timeout) {
+        .directive('hlTableRow', function () {
             return {
                 restrict: 'E',
                 transclude: true,
                 replace: true,
-                $scope: true,
+                scope: {
+                    selectedList: '=',
+                    travisSelected: '='
+                },
+                template: '<tr ng-transclude></tr>',
+                link: function ($scope, element, attrs) {
+                    var allowedAttributes = ['id', 'class', 'style'];
+                    angular.forEach(allowedAttributes, function (attr) {
+                        if (angular.isDefined(attrs[attr]) && attrs[attr]) {
+                            element.attr(attr, attrs[attr]);
+                        }
+                    });
+                }
+            }
+        })
+        .directive('hlTableCol', function ($timeout) {
+            return {
+                restrict: 'E',
+                transclude: true,
+                replace: true,
+                scope: true,
                 template: '<td ng-show="column.display" ng-class="checkClass()" rowspan="{{ rowspan }}" colspan="{{ colspan }}" ng-transclude></td>',
                 link: function ($scope, element, attrs) {
                     var columnIdx = angular.element(element).index();
@@ -299,9 +385,9 @@
                     }
 
                     if (angular.isDefined($scope.column)) {
-                        $scope.$watch('column.display', function (new_val) {
-                            if (new_val) {
-                                $scope.column.display = new_val;
+                        $scope.$watch('column.display', function (newVal) {
+                            if (newVal) {
+                                $scope.column.display = newVal;
                             }
                         }, true);
                     } else {
@@ -312,134 +398,27 @@
 
                     if (angular.isDefined($scope.column)) {
                         $scope.checkClass = function () {
-                            var class_name = '';
+                            var className = '';
 
-                            if (angular.isDefined($scope.column.text_align)) {
-                                class_name += 'uk-text-' + $scope.column.text_align;
-                            }
-
-                            if (angular.isDefined($scope.column.center_if_smaller)) {
-                                class_name += ' center-if-smaller';
-                            } else {
-                                if (angular.isDefined($scope.column.setting_title)) {
-                                    element.attr('data-label', $scope.column.setting_title);
-                                } else {
-                                    element.attr('data-label', $scope.column.title);
-                                }
+                            if (angular.isDefined($scope.column.textAlign)) {
+                                className += 'text-' + $scope.column.textAlign;
                             }
 
                             if (angular.isDefined(attrs.customClass)) {
-                                class_name += ' ' + attrs.customClass;
+                                className += ' ' + attrs.customClass;
                             }
 
-                            return class_name;
+                            return className;
                         };
                     }
-                }
-            }
-        })
-        .directive('travisColumn', function ($timeout) {
-            return {
-                restrict: 'A',
-                $scope: {
-                    column: '='
-                },
-                link: function ($scope, element, attrs) {
-                    if ($scope.column.display) {
-                        element.show();
-                    } else {
-                        element.hide();
-                    }
-
-                    $scope.$watch($scope.column.display, function (new_val, old_val) {
-                        if (new_val != old_val) {
-                            if (new_val) {
-                                element.show();
-                            } else {
-                                element.hide();
-                            }
-                        }
-                    });
-
-                    if (angular.isDefined($scope.column)) {
-                        var class_name = '';
-
-                        if (angular.isDefined($scope.column.text_align)) {
-                            class_name += 'uk-text-' + $scope.column.text_align;
-                        }
-
-                        if (angular.isDefined($scope.column.center_if_smaller)) {
-                            class_name += ' center-if-smaller';
-                        } else {
-                            if (angular.isDefined($scope.column.setting_title)) {
-                                element.attr('data-label', $scope.column.setting_title);
-                            } else {
-                                element.attr('data-label', $scope.column.title);
-                            }
-                        }
-
-                        if (angular.isDefined(attrs.customClass)) {
-                            class_name += ' ' + attrs.customClass;
-                        }
-
-                        element.addClass(class_name);
-                    }
-                }
-            }
-        })
-        .directive('hlTableHeader', function ($rootScope, $timeout, $log, hlTableConfig) {
-            return {
-                restrict: 'E',
-                replace: 'true',
-                scope: {
-                    columns: '=',
-                    config: '='
-                },
-                templateUrl: hlTableConfig.templatePath + 'header.tpl.html',
-                link: function ($scope, $element, $attrs) {
-                    $scope.sortData = function (field) {
-                        if (field == $scope.config.params.orderBy) {
-                            if ($scope.config.params.ascDesc == 'ASC') {
-                                $scope.config.params.ascDesc = 'DESC';
-                            } else {
-                                $scope.config.params.ascDesc = 'ASC';
-                            }
-                        } else {
-                            $scope.config.params.orderBy = field;
-                            $scope.config.params.ascDesc = 'DESC';
-                        }
-
-                        $scope.config.$reloadData();
-                    };
-                }
-            }
-        })
-        .directive('travisFooter', function ($timeout) {
-            return {
-                restrict: 'A',
-                $scope: {
-                    columns: '=',
-                    request: '=',
-                    showWhen: '='
-                },
-                templateUrl: 'app/libs/travis/travisFooter.tpl.html',
-                link: function ($scope, element, attrs) {
-                    $timeout(function () {
-                        $scope.$watch('request.offset', function () {
-                            if (parseInt($scope.request.offset) >= $scope.showWhen) {
-                                $(element).show();
-                            } else {
-                                $(element).hide();
-                            }
-                        });
-                    });
                 }
             }
         })
         .directive('hlTableSetting', function ($rootScope, $timeout, $log, $document, hlTableConfig) {
             return {
                 restrict: 'E',
-                $scope: {
+                replace: true,
+                scope: {
                     columns: '=',
                     config: '='
                 },
@@ -453,7 +432,7 @@
                         };
 
                         $scope.pageSizes = [
-                            {label: '20', value: 20},
+                            {label: '25', value: 25},
                             {label: '50', value: 50},
                             {label: '75', value: 75},
                             {label: '100', value: 100}
@@ -511,270 +490,6 @@
                             }
                         }
                     }
-                }
-            }
-        })
-        .directive('travisFilter', function ($rootScope, $timeout, $mdpDatePicker, $mdpTimePicker) {
-            return {
-                restrict: 'EA',
-                $scope: {
-                    columns: '=',
-                    request: '=',
-                    reloadFunction: '&'
-                },
-                templateUrl: 'app/libs/travis/travisFilter.tpl.html',
-                link: function ($scope, element, attrs) {
-                    $scope.filterSymbols = ['>', '>=', '<', '<='];
-                    $scope.selectizeOptions = [];
-                    $scope.selectizeConfig = {
-                        plugins: {
-                            'remove_button': {
-                                label: ''
-                            }
-                        },
-                        create: true,
-                        placeholder: 'Search...',
-                        highlight: true
-                    };
-
-                    if (angular.isUndefined(attrs.reloadFunction)) {
-                        console.error('travisFilter: reload function not found');
-                    }
-
-                    /**
-                     * Fix filter format error
-                     */
-                    $timeout(function () {
-                        if (angular.isDefined($scope.request.filter) && Object.keys($scope.request.filter).length > 0) {
-                            $scope.filter = $scope.request.filter;
-                        } else {
-                            $scope.request.filter = {};
-                            $scope.filter = {};
-                        }
-
-                        $scope.select_all = true;
-                    });
-
-                    /** filter **/
-                    if (angular.isDefined($scope.columns) && angular.isArray($scope.columns)) {
-                        angular.forEach($scope.columns, function (col, idx) {
-                            if (angular.isDefined(col.options) && angular.isDefined(col.options.scope_name)) {
-                                $scope.$parent.$parent.$watch(col.options.scope_name, function (new_val) {
-                                    if (angular.isDefined(new_val)) {
-                                        //console.log(new_val);
-                                        col.options.data = new_val;
-                                    }
-                                });
-                            }
-                        });
-                    } else {
-                        console.log('Bug: Columns collection is undefined.');
-                    }
-
-                    $scope.checkFilterValue = function () {
-                        var result = false;
-
-                        if (angular.isDefined($scope.request.filter) && Object.keys($scope.request.filter).length) {
-                            angular.forEach($scope.request.filter, function (item, idx) {
-                                if (!result) {
-                                    if (item.value != '') {
-                                        result = true;
-                                    }
-                                }
-                            });
-                        }
-
-                        return result;
-                    };
-
-                    $scope.checkFilterSymbol = function (symbol, checkSymbol) {
-                        if (symbol === checkSymbol || checkSymbol.substr(0, 1) == symbol || symbol.substr(0, 1) == checkSymbol) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    };
-
-                    /** Create column filter structure */
-                    var buildColFilter = function (col) {
-                        var field_filter = {field: col.field, type: col.type, sub_type: col.sub_type};
-
-                        switch (col.type) {
-                            case 'text':
-                            case 'bool':
-                                field_filter.value = angular.isDefined(col.default_value) ? col.default_value : '';
-                                break;
-                            case 'date':
-                                field_filter.value = angular.isDefined(col.default_value) && angular.isArray(col.default_value) ? col.default_value : [null, null];
-                                break;
-                            case 'select':
-                                field_filter.value = angular.isDefined(col.default_value) && angular.isArray(col.default_value) ? col.default_value : [];
-                                if (angular.isDefined(col.options) && angular.isDefined(col.options.filter_field)) {
-                                    field_filter.field = col.options.filter_field;
-                                }
-                                break;
-                            case 'mix':
-                                if (angular.isDefined(col.sub_type) && col.sub_type == 'range') {
-                                    var defaultVal = [
-                                        {
-                                            symbol: '>',
-                                            value: 0
-                                        }, {
-                                            symbol: '<',
-                                            value: 9999
-                                        }
-                                    ];
-                                    field_filter.range = angular.isDefined(col.default_value) && angular.isArray(col.default_value) ? col.default_value : defaultVal;
-                                } else {
-                                    field_filter.value = angular.isDefined(col.default_value) ? col.default_value : 0;
-                                    field_filter.symbol = angular.isDefined(col.default_symbol) ? col.default_symbol : '>';
-                                }
-                                break;
-                        }
-
-                        return field_filter;
-                    };
-
-                    $scope.submitFilter = function (is_click) {
-                        if ($scope.checkFilterValue() || (angular.isDefined(is_click) && is_click)) {
-                            $scope.request.page_num = 0;
-
-                            /** Fix filter structure */
-                            if (angular.isDefined($scope.request) && angular.isDefined($scope.request.filter) && angular.isDefined($scope.columns)) {
-                                var filterKeys = Object.keys($scope.request.filter);
-                                if (filterKeys.length > 0) {
-                                    var newFilter = {};
-                                    angular.forEach($scope.columns, function (col, idx) {
-
-                                        if (angular.isDefined(col.field) && col.field != '' && filterKeys.indexOf(col.field) != -1) {
-                                            /** Add some fields to error filter */
-                                            if (angular.isUndefined($scope.request.filter[col.field].field)) {
-                                                $scope.request.filter[col.field].field = col.field;
-                                            }
-
-                                            if (angular.isUndefined($scope.request.filter[col.field].type) ||
-                                                $scope.request.filter[col.field].type != col.type ||
-                                                (
-                                                    angular.isDefined($scope.request.filter[col.field].sub_type) &&
-                                                    angular.isDefined(col.sub_type) &&
-                                                    $scope.request.filter[col.field].sub_type != col.sub_type
-                                                ) || (
-                                                    angular.isUndefined($scope.request.filter[col.field].sub_type) &&
-                                                    angular.isDefined(col.sub_type)
-                                                ) || (
-                                                    angular.isDefined($scope.request.filter[col.field].sub_type) &&
-                                                    angular.isUndefined(col.sub_type)
-                                                )
-                                            ) {
-                                                $scope.request.filter[col.field] = buildColFilter(col);
-                                            }
-
-                                            newFilter[col.field] = $scope.request.filter[col.field];
-                                        }
-                                    });
-
-                                    $scope.request.filter = newFilter;
-                                }
-                            }
-
-                            //console.log('Submit filter');
-                            $scope.reloadFunction();
-                        }
-                    };
-
-                    $scope.clearFilter = function () {
-                        if (angular.isDefined($scope.request.filter) && Object.keys($scope.request.filter).length) {
-                            angular.forEach($scope.columns, function (col, idx) {
-                                if (col.can_filter) {
-                                    $scope.request.filter[col.field] = $scope.request.filter[col.field] = buildColFilter(col);
-                                }
-                            });
-
-                            $scope.request.page_num = 0;
-                            //console.log('Clear filter');
-                            $scope.reloadFunction();
-                        }
-                    };
-
-                    $scope.colFilter = function (col) {
-                        if (col.filter) {
-                            if (!scope.request.filter.hasOwnProperty(col.field)) {
-                                $scope.request.filter[col.field] = buildColFilter(col);
-                            }
-                        } else {
-                            if ($scope.request.filter.hasOwnProperty(col.field)) {
-                                var filter_value = angular.copy($scope.request.filter[col.field].value);
-                                delete $scope.request.filter[col.field];
-
-                                if ($scope.checkFilterValue() || filter_value != '') {
-                                    $scope.request.page_num = 0;
-                                    //console.log('Col filter');
-                                    $scope.reloadFunction();
-                                }
-                            }
-                        }
-                    };
-
-                    /** Date filter */
-                    $scope.showDatePicker = function (ev, field, idx) {
-                        if (angular.isUndefined($scope.request.filter[field]) || angular.isUndefined($scope.request.filter[field].value) || !angular.isArray($scope.request.filter[field].value)) {
-                            $scope.request.filter[field].value = [null, null];
-                        }
-
-                        var currentDate = $scope.request.filter[field].value[idx] ? $scope.request.filter[field].value[idx] : new Date();
-                        var config = {};
-
-                        if (idx === 1) {
-                            config = {
-                                targetEvent: ev,
-                                minDate: $scope.request.filter[field].value[0]
-                            };
-                        } else {
-                            config = {
-                                targetEvent: ev,
-                                maxDate: $scope.request.filter[field].value[1]
-                            };
-                        }
-
-                        $mdpDatePicker(currentDate, config).then(function (date) {
-                            $scope.request.filter[field].value[idx] = date;
-                        });
-                    };
-
-                    $scope.dateFormat = function (val, str_format) {
-                        var d = moment(val);
-                        return d.format(str_format);
-                    };
-
-                    /** end Date filter */
-
-                    $scope.toggleAll = function (status) {
-                        if (angular.isDefined($scope.columns) && angular.isArray($scope.columns)) {
-                            angular.forEach($scope.columns, function (col, idx) {
-                                if (col.can_filter) {
-                                    if (angular.isUndefined(col.default_filter) || !col.default_filter) {
-                                        col.filter = status;
-                                    }
-
-                                    if (status) {
-                                        if (!scope.request.filter.hasOwnProperty(col.field)) {
-
-                                            $scope.request.filter[col.field] = buildColFilter(col);
-                                            ;
-                                        }
-                                    } else {
-                                        if ($scope.request.filter.hasOwnProperty(col.field)) {
-                                            if (angular.isUndefined(col.default_filter) || !col.default_filter) {
-                                                delete $scope.request.filter[col.field];
-                                            }
-                                        }
-                                    }
-                                }
-                            });
-                        } else {
-                            console.log('Bug: Columns collection is undefined.');
-                        }
-                    };
                 }
             }
         })

@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="vi-VN" dir="LTR" xmlns:fb="http://www.facebook.com/2008/fbml" ng-app="testApp">
+<html lang="vi-VN" dir="LTR" ng-app="testApp">
 <head>
     <base href="/hl-table/"/>
-    <title>HL-Table</title>
+    <title>hl-table</title>
 
     <meta charset="utf-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1"/>
@@ -14,22 +14,20 @@
     <script src="custom.js"></script>
 
     <script src="bower_components/angular/angular.min.js?v=1.6.4"></script>
+    <script src="bower_components/oclazyload/dist/ocLazyLoad.min.js?v=1.0.10"></script>
     <script src="dist/hl.directives.js?v=1.0.0"></script>
     <script src="app.js?v=1.0.0"></script>
 </head>
 <body ng-controller="testCtrl">
-<h1>HL-Table</h1>
-<div class="ui dropdown">
-    <div class="text">File</div>
-    <i class="dropdown icon"></i>
-    <div class="menu">
-        <div class="item">New</div>
-        <div class="item">
-            <span class="description">ctrl + o</span>
-            Open...
-        </div>
-    </div>
-</div>
-<hl-table columns="columns" config="config"></hl-table>
+<hl-table columns="columns" config="config">
+    <hl-table-row ng-repeat="item in config.$dataList">
+        <hl-table-col>
+            <input type="checkbox">
+        </hl-table-col>
+        <hl-table-col>A</hl-table-col>
+        <hl-table-col>B</hl-table-col>
+        <hl-table-col>C</hl-table-col>
+    </hl-table-row>
+</hl-table>
 </body>
 </html>
