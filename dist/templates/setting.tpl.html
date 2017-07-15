@@ -4,7 +4,12 @@
         <div>
             <ul>
                 <li>
-                    Show <select ng-model="config.params.offset" ng-options="ps.value as ps.label for ps in pageSizes" class="ui fluid dropdown"></select> entries
+                    Show&nbsp;
+                    <sm-dropdown class="selection" model="config.params.offset"
+                                 items="pageSizes" label="item.label" value="item.value"
+                                 style="min-width: 65px;">
+                    </sm-dropdown>
+                    &nbsp;entries
                 </li>
                 <li>
                     <a ng-click="toggleAll(true)">

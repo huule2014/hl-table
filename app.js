@@ -20,7 +20,8 @@ if(angular.isDefined(angular)){
             {
                 field: 'id',
                 label: 'ID',
-                order: 1
+                order: 1,
+                canHide: false
             }, {
                 field: 'name',
                 label: 'Name',

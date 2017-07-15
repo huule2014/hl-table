@@ -15,15 +15,19 @@
 
     <script src="bower_components/angular/angular.min.js?v=1.6.4"></script>
     <script src="bower_components/oclazyload/dist/ocLazyLoad.min.js?v=1.0.10"></script>
-    <script src="dist/hl.directives.js?v=1.0.0"></script>
+    <script src="bower_components/semantic-ui-angular-jquery/angular-semantic-ui.min.js?v=0.2.1"></script>
+    <script src="dist/hl.directives.js?v=0.0.1"></script>
     <script src="app.js?v=1.0.0"></script>
+    <style>
+        [ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
+            display: none !important;
+        }
+    </style>
 </head>
 <body ng-controller="testCtrl">
+{{columns}}
 <hl-table columns="columns" config="config">
     <hl-table-row ng-repeat="item in config.$dataList">
-        <hl-table-col>
-            <input type="checkbox">
-        </hl-table-col>
         <hl-table-col>A</hl-table-col>
         <hl-table-col>B</hl-table-col>
         <hl-table-col>C</hl-table-col>

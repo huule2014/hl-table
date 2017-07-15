@@ -1,15 +1,15 @@
 /**
- * oclazyload - Load modules on demand (lazy load) with angularJS
- * @version v1.0.10
+ * HL Table - Useful table directives for listing from server side
+ * @version v0.0.1
  * @link https://github.com/huule2014/hl-table
  * @license MIT
- * @author Olivier Combe <olivier.combe@gmail.com>
+ * @author Huu Le <huuptag@gmail.com>
  */
 (function () {
     'use strict';
     var appPath = null, templatePath = null;
 
-    angular.module('hlTableModule', ['oc.lazyLoad'])
+    angular.module('hlTableModule', ['oc.lazyLoad', 'semantic-ui'])
         .config(function ($ocLazyLoadProvider) {
             $ocLazyLoadProvider.config({
                 debug: false,
@@ -26,10 +26,6 @@
                     }
                 ]
             });
-        })
-        .run(function ($ocLazyLoad) {
-            // Load default ocLazyLoad modules
-            $ocLazyLoad.load('UIForm');
         })
         .provider('hlTableConfig', function () {
             return {
@@ -51,6 +47,11 @@
                     }
                 }
             }
+        })
+        .run(function ($ocLazyLoad, hlTableConfig) {
+            // Load default ocLazyLoad modules
+            $ocLazyLoad.load('UIForm');
+            $ocLazyLoad.load(hlTableConfig.templatePath + 'hl-table-custom.css');
         })
         // URL helper for all directives
         .factory('hlUrlHelper', function ($browser, $log) {
@@ -341,7 +342,7 @@
                 }
             }
         })
-        .directive('hlTableRow', function () {
+        .directive('hlTableRow', function ($timeout) {
             return {
                 restrict: 'E',
                 transclude: true,
@@ -351,12 +352,16 @@
                     travisSelected: '='
                 },
                 template: '<tr ng-transclude></tr>',
-                link: function ($scope, element, attrs) {
+                link: function ($scope, $element, $attrs) {
                     var allowedAttributes = ['id', 'class', 'style'];
                     angular.forEach(allowedAttributes, function (attr) {
-                        if (angular.isDefined(attrs[attr]) && attrs[attr]) {
-                            element.attr(attr, attrs[attr]);
+                        if (angular.isDefined($attrs[attr]) && $attrs[attr]) {
+                            element.attr(attr, $attrs[attr]);
                         }
+                    });
+
+                    $timeout(function(){
+                        angular.element($element).prepend('<td><input type="checkbox"></td>');
                     });
                 }
             }
@@ -367,33 +372,28 @@
                 transclude: true,
                 replace: true,
                 scope: true,
-                template: '<td ng-show="column.display" ng-class="checkClass()" rowspan="{{ rowspan }}" colspan="{{ colspan }}" ng-transclude></td>',
-                link: function ($scope, element, attrs) {
-                    var columnIdx = angular.element(element).index();
-                    var columnList = $scope.$parent.$parent.$parent.$parent.$parent.columns;
-
-                    if (columnIdx > 0 && angular.isDefined(columnList) && angular.isArray(columnList) && angular.isDefined(columnList[columnIdx - 1])) {
-                        $scope.column = columnList[columnIdx - 1];
-                    }
-
-                    if (angular.isDefined(attrs.colspan)) {
-                        $scope.colspan = attrs.colspan;
-                    }
-
-                    if (angular.isDefined(attrs.rowspan)) {
-                        $scope.rowspan = attrs.rowspan;
-                    }
-
-                    if (angular.isDefined($scope.column)) {
-                        $scope.$watch('column.display', function (newVal) {
-                            if (newVal) {
-                                $scope.column.display = newVal;
+                template: '<td ng-class="checkClass()" ng-transclude></td>',
+                link: function ($scope, $element, $attrs) {
+                    $scope.$watch(function () {
+                        var columnIdx = angular.element($element).index();
+                        var $th = angular.element($element).closest('table').find('th').eq(columnIdx);
+                        return $th.is(":visible");
+                    }, function (newVal, oldVal) {
+                        if (!angular.equals(newVal, oldVal)) {
+                            if (newVal == true) {
+                                angular.element($element).show();
+                            } else {
+                                angular.element($element).hide();
                             }
-                        }, true);
-                    } else {
-                        $scope.column = {
-                            display: true
-                        };
+                        }
+                    });
+
+                    if (angular.isDefined($attrs.colspan)) {
+                        angular.element($element).attr('colspan', $attrs.colspan);
+                    }
+
+                    if (angular.isDefined($attrs.rowspan)) {
+                        angular.element($element).attr('rowspan', $attrs.rowspan);
                     }
 
                     if (angular.isDefined($scope.column)) {
@@ -404,8 +404,8 @@
                                 className += 'text-' + $scope.column.textAlign;
                             }
 
-                            if (angular.isDefined(attrs.customClass)) {
-                                className += ' ' + attrs.customClass;
+                            if (angular.isDefined($attrs.customClass)) {
+                                className += ' ' + $attrs.customClass;
                             }
 
                             return className;
@@ -462,7 +462,9 @@
                         $scope.setupColumns = function () {
                             if (angular.isDefined($scope.columns) && angular.isArray($scope.columns)) {
                                 angular.forEach($scope.columns, function (col, idx) {
-                                    angular.extend(col, defaultColumn);
+                                    var tmp = {};
+                                    angular.extend(tmp, defaultColumn, col);
+                                    $scope.columns[idx] = tmp;
                                 });
                             } else {
                                 $log.error('[hlTableSetting] >> columns is undefined.');
@@ -472,16 +474,10 @@
                         /** First loading */
                         $scope.setupColumns();
 
-                        $scope.$watch("columns", function (newVal, oldVal) {
-                            if (!angular.equals(newVal, oldVal)) {
-                                $scope.setupColumns();
-                            }
-                        });
-
                         $scope.toggleAll = function (status) {
                             if (angular.isDefined($scope.columns) && angular.isArray($scope.columns)) {
                                 angular.forEach($scope.columns, function (col, idx) {
-                                    if (angular.isDefined(col.canhide) && col.canHide) {
+                                    if (angular.isDefined(col.canHide) && col.canHide == true) {
                                         col.display = status;
                                     }
                                 });
