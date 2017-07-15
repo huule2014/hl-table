@@ -1,16 +1,24 @@
 <thead>
 <tr>
     <th width="2%">
-        <input type="checkbox" ng-model="selectAllRow" ng-change="selectAll()">
+        <div class="ui checkbox" sm-checkbox-bind="">
+            <input type="checkbox" ng-model="config.$selectAll" name="{{config.$tableName}}-select-all">
+        </div>
     </th>
-    <th ng-class="{'text-{{col.textAlign}}': col.textAlign, 'sort-able': col.canSort == true && !col.multiSort, 'sort-asc': col.canSort == true && !col.multiSort && col.field == orderBy && ascDesc == 'DESC', 'sort-desc': col.canSort == true && !col.multiSort && col.field == orderBy && ascDesc == 'ASC'}"
+    <th ng-class="{'{{col.textAlign}} aligned': col.textAlign, 'sortable': col.canSort || col.multiSort}"
         ng-if="col.display"
         ng-repeat="(colIdx, col) in columns"
         ng-click="col.canSort == true && !col.multiSort ? sortField(col.field):''"
-        ng-style="{'width': col.width}">
+        ng-style="{'width': col.width}"
+        col-text-align="{{col.textAlign}}"
+        col-custom-classes="{{col.classes}}">
+        <i ng-show="col.canSort" class="icon" ng-class="{
+        'sort': col.canSort == true,
+        'descending': !col.multiSort && col.field == config.params.orderBy && config.params.ascDesc == 'DESC',
+        'ascending': !col.multiSort && col.field == config.params.orderBy && config.params.ascDesc == 'ASC'
+        }"></i>
         <label ng-style="{'cursor': (col.canSort ? 'pointer' : '')}" ng-if="!col.multiSort"
                bind-html-compile="col.label"></label>
-
         <div ng-if="col.multiSort">
             <label bind-html-compile="col.label"></label>
             <label>Sort</label>

@@ -25,13 +25,14 @@
     </style>
 </head>
 <body ng-controller="testCtrl">
-{{columns}}
-<hl-table columns="columns" config="config">
-    <hl-table-row ng-repeat="item in config.$dataList">
-        <hl-table-col>A</hl-table-col>
-        <hl-table-col>B</hl-table-col>
-        <hl-table-col>C</hl-table-col>
-    </hl-table-row>
-</hl-table>
+<div class="ui container">
+    <hl-table columns="columns" config="config">
+        <hl-table-row ng-repeat="item in config.$dataList" primary-key="id">
+            <hl-table-col>{{item.id}}</hl-table-col>
+            <hl-table-col>{{item.name}}</hl-table-col>
+            <hl-table-col>{{item.published}}</hl-table-col>
+        </hl-table-row>
+    </hl-table>
+</div>
 </body>
 </html>

@@ -96,14 +96,22 @@
             var reloadingData = [];
 
             return {
-                run: function (config) {
+                run: function (config, primaryKey) {
                     if (angular.isDefined(config) && angular.isDefined(config.name)) {
                         var loadingVar = '$dataLoading',
                             listVar = '$dataList',
                             totalRowsVar = '$totalRows',
                             reloadFunctionName = '$reloadData',
                             tableNameVar = '$tableName',
-                            selectedItemsVar = '$selectedItems';
+                            selectAllVar = '$selectAll',
+                            selectedItemsVar = '$selectedItems',
+                            selectItemFunctionName = '$selectItem',
+                            allPrimaryKey = '$allPrimaryKey';
+
+                        /** Set select all status */
+                        if (angular.isUndefined(config[selectAllVar])) {
+                            config[selectAllVar] = false;
+                        }
 
                         if (angular.isDefined(config.name)
                             && reloadingData.indexOf(config.name) == -1
@@ -111,9 +119,6 @@
                             && (angular.isUndefined(config[loadingVar]) || !config[loadingVar])) {
                             /** Push config name to reloadingData array */
                             reloadingData.push(config.name);
-
-                            /** Set dataLoading status */
-                            config[loadingVar] = true;
 
                             /** Set firstLoad status */
                             if (angular.isUndefined(config.params.firstLoad)) {
@@ -130,6 +135,24 @@
                                 config[selectedItemsVar] = [];
                             }
 
+                            // DEFINED SOME FUNCTIONS
+                            /**
+                             * Select item
+                             */
+                            if (angular.isUndefined(config[selectItemFunctionName])) {
+                                config[selectItemFunctionName] = function (hlDataId) {
+                                    if (angular.isUndefined(config[selectedItemsVar])) {
+                                        config[selectedItemsVar] = [];
+                                    }
+
+                                    if (config[selectedItemsVar].indexOf(hlDataId) == -1) {
+                                        config[selectedItemsVar].push(hlDataId);
+                                    } else {
+                                        config[selectedItemsVar].splice(config[selectedItemsVar].indexOf(hlDataId), 1);
+                                    }
+                                };
+                            }
+
                             /** Default params */
                             var defaultParams = {
                                 offset: 25,
@@ -138,127 +161,104 @@
 
                             angular.extend(config.params, defaultParams);
 
-                            var defer = $q.defer();
 
-                            $http({
-                                method: 'POST',
-                                url: config.url,
-                                data: config.params
-                            }).then(function (response) {
-                                    var result = response.data;
+                            var reloadDataFunction = function (deferReturn) {
+                                /** Set dataLoading status */
+                                config[loadingVar] = true;
 
-                                    // Set list
-                                    if (angular.isDefined(result.dataList)) {
-                                        config[listVar] = result.dataList;
-                                    }
+                                if (angular.isDefined(deferReturn)) {
+                                    var defer = $q.defer();
+                                } else {
+                                    deferReturn = false;
+                                }
 
-                                    if (angular.isDefined(result.totalRows)) {
-                                        config[totalRowsVar] = result.totalRows;
-                                    }
+                                $http({
+                                    method: 'POST',
+                                    url: config.url,
+                                    data: config.params
+                                }).then(function (response) {
+                                        var result = response.data;
 
-                                    if (angular.isDefined(config.params) && angular.isDefined(config.params.firstLoad) && config.params.firstLoad) {
-                                        /** Reload filter from json */
-                                        if (angular.isDefined(result) && angular.isDefined(result.paramSession)) {
-                                            /** Check pageNum */
-                                            if (angular.isDefined(result.paramSession.pageNum)) {
-                                                config.params.pageNum = result.paramSession.pageNum;
-                                            }
+                                        // Set list
+                                        if (angular.isDefined(result.dataList)) {
+                                            config[listVar] = result.dataList;
+                                            config[allPrimaryKey] = [];
 
-                                            /** Check offset */
-                                            if (angular.isDefined(result.paramSession.offset)) {
-                                                config.params.offset = result.paramSession.offset;
-                                            }
-
-                                            /** Check filter */
-                                            if (angular.isDefined(result.paramSession.filter) && (result.paramSession.filter.length > 0 || Object.keys(result.paramSession.filter).length > 0)) {
-                                                config.params.filter = result.paramSession.filter;
-                                            }
-
-                                            /** Check order_by */
-                                            if (angular.isDefined(result.paramSession.orderBy)) {
-                                                config.params.orderBy = result.paramSession.orderBy;
-                                            }
-
-                                            /** Check asc_desc */
-                                            if (angular.isDefined(result.paramSession.ascDesc)) {
-                                                config.params.ascDesc = result.paramSession.ascDesc;
+                                            if (angular.isDefined(primaryKey) && angular.isArray(result.dataList) && result.dataList.length > 0) {
+                                                angular.forEach(result.dataList, function (item) {
+                                                    if (angular.isDefined(item[primaryKey]) && config[allPrimaryKey].indexOf(item[primaryKey]) == -1) {
+                                                        config[allPrimaryKey].push(item[primaryKey]);
+                                                    }
+                                                });
                                             }
                                         }
-                                    }
 
-                                    defer.resolve(result);
-                                }, function (error) {
-                                    defer.reject(error);
-                                })
-                                .finally(function () {
-                                    /** Remove config name in reloadingData array */
-                                    reloadingData.splice(reloadingData.indexOf(config.name), 1);
+                                        if (angular.isDefined(result.totalRows)) {
+                                            config[totalRowsVar] = result.totalRows;
+                                        }
 
-                                    /** Reset dataLoading to false */
-                                    $timeout(function () {
-                                        config[loadingVar] = false;
-                                    }, 500);
-                                });
+                                        if (angular.isDefined(config.params) && angular.isDefined(config.params.firstLoad) && config.params.firstLoad) {
+                                            /** Reload filter from json */
+                                            if (angular.isDefined(result) && angular.isDefined(result.paramSession)) {
+                                                /** Check pageNum */
+                                                if (angular.isDefined(result.paramSession.pageNum)) {
+                                                    config.params.pageNum = result.paramSession.pageNum;
+                                                }
 
-                            if (angular.isUndefined(config[reloadFunctionName])) {
-                                config[reloadFunctionName] = function () {
-                                    $http({
-                                        method: 'POST',
-                                        url: config.url,
-                                        data: config.params
-                                    }).then(function (response) {
-                                            var result = response.data;
+                                                /** Check offset */
+                                                if (angular.isDefined(result.paramSession.offset)) {
+                                                    config.params.offset = result.paramSession.offset;
+                                                }
 
-                                            // Set list
-                                            if (angular.isDefined(result.dataList)) {
-                                                config[listVar] = result.dataList;
-                                            }
+                                                /** Check filter */
+                                                if (angular.isDefined(result.paramSession.filter) && (result.paramSession.filter.length > 0 || Object.keys(result.paramSession.filter).length > 0)) {
+                                                    config.params.filter = result.paramSession.filter;
+                                                }
 
-                                            if (angular.isDefined(config.params) && angular.isDefined(config.params.firstLoad) && config.params.firstLoad) {
-                                                /** Reload filter from json */
-                                                if (angular.isDefined(result) && angular.isDefined(result.paramSession)) {
-                                                    /** Check pageNum */
-                                                    if (angular.isDefined(result.paramSession.pageNum)) {
-                                                        config.params.pageNum = result.paramSession.pageNum;
-                                                    }
+                                                /** Check order_by */
+                                                if (angular.isDefined(result.paramSession.orderBy)) {
+                                                    config.params.orderBy = result.paramSession.orderBy;
+                                                }
 
-                                                    /** Check offset */
-                                                    if (angular.isDefined(result.paramSession.offset)) {
-                                                        config.params.offset = result.paramSession.offset;
-                                                    }
-
-                                                    /** Check filter */
-                                                    if (angular.isDefined(result.paramSession.filter) && (result.paramSession.filter.length > 0 || Object.keys(result.paramSession.filter).length > 0)) {
-                                                        config.params.filter = result.paramSession.filter;
-                                                    }
-
-                                                    /** Check order_by */
-                                                    if (angular.isDefined(result.paramSession.orderBy)) {
-                                                        config.params.orderBy = result.paramSession.orderBy;
-                                                    }
-
-                                                    /** Check asc_desc */
-                                                    if (angular.isDefined(result.paramSession.ascDesc)) {
-                                                        config.params.ascDesc = result.paramSession.ascDesc;
-                                                    }
+                                                /** Check asc_desc */
+                                                if (angular.isDefined(result.paramSession.ascDesc)) {
+                                                    config.params.ascDesc = result.paramSession.ascDesc;
                                                 }
                                             }
-                                        }, function (error) {
+                                        }
+
+                                        if (deferReturn) {
+                                            defer.resolve(result);
+                                        }
+                                    }, function (error) {
+                                        if (deferReturn) {
+                                            defer.reject(error);
+                                        } else {
                                             $log.error(error);
-                                        })
-                                        .finally(function () {
-                                            /** Remove config name in reloadingData array */
-                                            reloadingData.splice(reloadingData.indexOf(config.name), 1);
+                                        }
+                                    })
+                                    .finally(function () {
+                                        /** Remove config name in reloadingData array */
+                                        reloadingData.splice(reloadingData.indexOf(config.name), 1);
 
-                                            /** Reset dataLoading to false */
-                                            $timeout(function () {
-                                                config[loadingVar] = false;
-                                            }, 500);
-                                        });
+                                        /** Reset dataLoading to false */
+                                        $timeout(function () {
+                                            config[loadingVar] = false;
+                                        }, 500);
+                                    });
+
+                                if (deferReturn) {
+                                    return defer.promise;
                                 }
-                            }
+                            };
 
-                            return defer.promise;
+                            // Init reload
+                            reloadDataFunction(true);
+
+                            // Define reload function
+                            config[reloadFunctionName] = function () {
+                                reloadDataFunction();
+                            };
 
                         } else {
                             $log.error('[hlDataHelper] >> Invalid config.');
@@ -311,6 +311,16 @@
                     $scope.sortField = function (field) {
                         hlDataHelper.sortField($scope.config, field);
                     };
+
+                    $scope.$watch('config.$selectAll', function (newVal, oldVal) {
+                        if (!angular.equals(newVal, oldVal)) {
+                            if (newVal == true) {
+                                $scope.config.$selectedItems = angular.copy($scope.config.$allPrimaryKey);
+                            } else {
+                                $scope.config.$selectedItems = [];
+                            }
+                        }
+                    })
                 }
             }
         })
@@ -342,14 +352,13 @@
                 }
             }
         })
-        .directive('hlTableRow', function ($timeout) {
+        .directive('hlTableRow', function ($compile, $timeout, $log) {
             return {
                 restrict: 'E',
                 transclude: true,
                 replace: true,
                 scope: {
-                    selectedList: '=',
-                    travisSelected: '='
+                    primaryKey: '@'
                 },
                 template: '<tr ng-transclude></tr>',
                 link: function ($scope, $element, $attrs) {
@@ -360,9 +369,15 @@
                         }
                     });
 
-                    $timeout(function(){
-                        angular.element($element).prepend('<td><input type="checkbox"></td>');
-                    });
+                    if (angular.isDefined($scope.primaryKey)) {
+                        var checkboxColumn = angular.element('<td>' +
+                            '<sm-checkbox model="primaryKey"></sm-checkbox>' +
+                            '</td>');
+                        angular.element($element).prepend(checkboxColumn);
+                        $compile(checkboxColumn)($scope.$parent);
+                    } else {
+                        $log.error('[hlTableRow] >> No primary-key.');
+                    }
                 }
             }
         })
@@ -371,7 +386,10 @@
                 restrict: 'E',
                 transclude: true,
                 replace: true,
-                scope: true,
+                scope: {
+                    textAlign: '@',
+                    customClass: '@'
+                },
                 template: '<td ng-class="checkClass()" ng-transclude></td>',
                 link: function ($scope, $element, $attrs) {
                     $scope.$watch(function () {
@@ -388,28 +406,27 @@
                         }
                     });
 
+                    $timeout(function () {
+                        var columnIdx = angular.element($element).index();
+                        var $th = angular.element($element).closest('table').find('th').eq(columnIdx);
+                        var textAlign = $th.attr('col-text-align');
+                        var customClasses = $th.attr('col-custom-classes');
+                        var currentClasses = angular.element($element).attr('class');
+                        var allowedAlign = ['left', 'right', 'center'];
+                        if (customClasses && allowedAlign.indexOf(textAlign) > -1) {
+                            customClasses += ' ' + textAlign + ' aligned';
+                        }
+
+                        // Assign class
+                        angular.element($element).attr('class', currentClasses + ' ' + customClasses);
+                    });
+
                     if (angular.isDefined($attrs.colspan)) {
                         angular.element($element).attr('colspan', $attrs.colspan);
                     }
 
                     if (angular.isDefined($attrs.rowspan)) {
                         angular.element($element).attr('rowspan', $attrs.rowspan);
-                    }
-
-                    if (angular.isDefined($scope.column)) {
-                        $scope.checkClass = function () {
-                            var className = '';
-
-                            if (angular.isDefined($scope.column.textAlign)) {
-                                className += 'text-' + $scope.column.textAlign;
-                            }
-
-                            if (angular.isDefined($attrs.customClass)) {
-                                className += ' ' + $attrs.customClass;
-                            }
-
-                            return className;
-                        };
                     }
                 }
             }
@@ -448,6 +465,12 @@
                         $scope.$watch('theme.fontSize', function (newVal) {
                             if (angular.isDefined(newVal) && newVal) {
                                 changeFontSize(newVal);
+                            }
+                        });
+
+                        $scope.$watch('config.params.offset', function (newVal, oldVal) {
+                            if (newVal && !angular.equals(newVal, oldVal)) {
+                                $scope.config.$reloadData();
                             }
                         });
 
@@ -1449,4 +1472,5 @@
                 }
             }
         });
-})(window.angular);
+})
+(window.angular);

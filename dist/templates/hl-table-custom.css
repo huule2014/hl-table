@@ -1,0 +1,7 @@
+.hl-table-container {
+
+}
+
+.hl-table th.sortable:hover {
+    cursor: pointer;
+}

@@ -21,19 +21,26 @@ if(angular.isDefined(angular)){
                 field: 'id',
                 label: 'ID',
                 order: 1,
-                canHide: false
+                canHide: false,
+                textAlign: 'right',
+                width: '10%',
+                classes: 'id abc'
             }, {
                 field: 'name',
                 label: 'Name',
-                order: 3
+                order: 3,
+                textAlign: 'left',
+                canSort: false
             }, {
                 field: 'published',
                 label: 'Published',
-                order: 2
+                order: 2,
+                textAlign: 'left',
+                width: '10%'
             }
         ];
 
         // Run list
-        hlDataHelper.run($scope.config);
+        hlDataHelper.run($scope.config, 'id');
     });
 }

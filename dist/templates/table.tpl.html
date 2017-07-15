@@ -1,11 +1,18 @@
 <div class="hl-table-container" ng-cloak>
     <hl-table-setting columns="columns" config="config"></hl-table-setting>
     <!-- hl-table -->
-    <table id="{{config.$tableName}}" class="hl-table">
+    <table id="{{config.$tableName}}" class="hl-table ui selectable celled table">
         <!-- hl-header -->
-        <thead hl-table-header columns="columns" config="config" ></thead>
+        <thead hl-table-header columns="columns" config="config" class="full-width" ></thead>
         <!-- hl-body -->
-        <tbody ng-cloak ng-transclude></tbody>
+        <tbody ng-show="config.$dataLoading">
+        <tr>
+            <td colspan="{{columns.length + 1}}">
+                Data loading...
+            </td>
+        </tr>
+        </tbody>
+        <tbody ng-hide="config.$dataLoading" ng-transclude></tbody>
         <!-- hl-footer -->
         <tfoot hl-table-footer columns="columns" config="config"></tfoot>
     </table>
