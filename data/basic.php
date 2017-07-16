@@ -17,6 +17,4 @@ foreach (range(1, $offset) as $i) {
     ));
 }
 
-sleep(1);
-
 echo json_encode(array("dataList" => $arr, "totalRows" => $totalRows, "paramSession" => $data));

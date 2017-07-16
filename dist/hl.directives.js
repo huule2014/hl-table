@@ -20,7 +20,9 @@
         selectItemFunctionName = '$selectItem',
         allPrimaryKey = '$allPrimaryKey',
         dataSearchingVar = '$dataSearching',
-        searchDataFunctionName = '$searchData';
+        searchDataFunctionName = '$searchData',
+        filterVar = '$filter',
+        resetFilterVar = '$resetFilter';
 
     angular.module('hlTableModule', ['oc.lazyLoad', 'semantic-ui'])
         .config(function ($ocLazyLoadProvider) {
@@ -165,6 +167,16 @@
                                 config[selectedItemsVar] = [];
                             }
 
+                            /** Set filter collection */
+                            if (angular.isUndefined(config[filterVar])) {
+                                config[filterVar] = {};
+                            }
+
+                            /** Set selected items */
+                            if (angular.isUndefined(config[selectedItemsVar])) {
+                                config[totalRowsVar] = 0;
+                            }
+
                             // DEFINED SOME FUNCTIONS
                             /**
                              * Select item
@@ -199,6 +211,11 @@
                                     var defer = $q.defer();
                                 } else {
                                     deferReturn = false;
+                                }
+
+                                // Bind filter to params
+                                if (angular.isDefined(config[filterVar]) && angular.isObject(config[filterVar])) {
+                                    config.params.filter = config[filterVar];
                                 }
 
                                 $http({
@@ -298,6 +315,13 @@
                                     reloadDataFunction();
                                 }
                             };
+
+                            // Defined reset filter function
+                            config[resetFilterVar] = function () {
+                                config[filterVar] = {};
+                                config.params.pageNum = 0;
+                                reloadDataFunction();
+                            }
 
                         } else {
                             $log.error('[hlDataHelper] >> Invalid config.');
@@ -564,13 +588,6 @@
                 },
                 templateUrl: hlTableConfig.templatePath + 'pagination.tpl.html',
                 link: function ($scope, element, attrs) {
-                    $scope.$watch('config.' + totalRowsVar, function (newVal, oldVal) {
-                        if (newVal && !angular.equals(newVal, oldVal)) {
-                            $scope.config.params.pageNum = 0;
-                            $scope.buildPagination();
-                        }
-                    });
-
                     $scope.fromRow = 0;
                     $scope.toRow = 0;
                     $scope.numLinks = 5;
@@ -645,6 +662,16 @@
                         }
                     };
 
+                    /** Watch $totalRows */
+                    $scope.$watch(function () {
+                        return $scope.config[totalRowsVar];
+                    }, function (newVal, oldVal) {
+                        if (newVal) {
+                            $scope.config.params.pageNum = 0;
+                            $scope.buildPagination();
+                        }
+                    });
+
                     $scope.goPage = function (pageNum) {
                         var reload = false;
 
@@ -656,7 +683,7 @@
                             pageNum = $scope.pageLimit - 1;
                         }
 
-                        if (pageNum != $scope.pageNum && pageNum >= 0 && pageNum <= $scope.pageLimit) {
+                        if (pageNum != $scope.config.params.pageNum && pageNum >= 0 && pageNum <= $scope.pageLimit) {
                             reload = true;
                         }
 

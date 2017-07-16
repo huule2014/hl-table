@@ -9,3 +9,7 @@
 .ui.menu .dropdown.item .menu {
     overflow: hidden;
 }
+
+.menu.scrolling {
+    overflow: auto !important;
+}

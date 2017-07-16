@@ -27,12 +27,37 @@
 </head>
 <body ng-controller="testCtrl">
 <div class="ui container">
-    {{config.$selectedItems}}
+    <script id="myModule/advancedFilter.tpl.html" type="text/ng-template">
+        <div class="ui item">
+            <div class="ui form">
+                <div class="inline">
+                    <div class="field">
+                        <sm-radio name="filter-published" model="config.$filter.published" label="Published" value="'1'">
+                    </div>
+                    <div class="field">
+                        <sm-radio name="filter-published" model="config.$filter.published" label="Unpublished" value="'0'">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="ui item">
+            <div class="ui form">
+                <div class="field">
+                    <label>Another field</label>
+                    <input ng-model="config.$filter.anotherField" type="text" name="another-field-search" placeholder="Another search...">
+                </div>
+            </div>
+        </div>
+    </script>
     <hl-table columns="columns" config="config">
         <hl-table-row ng-repeat="item in config.$dataList" primary-key="id">
             <hl-table-col>{{item.id}}</hl-table-col>
-            <hl-table-col>{{item.name}}</hl-table-col>
+            <hl-table-col>This is a long long long long long content</hl-table-col>
             <hl-table-col>{{item.published}}</hl-table-col>
+            <hl-table-col>
+                <i class="edit icon"></i>
+                <i class="trash outline icon"></i>
+            </hl-table-col>
         </hl-table-row>
     </hl-table>
 </div>

@@ -1,46 +1,52 @@
-if(angular.isDefined(angular)){
+if (angular.isDefined(angular)) {
     angular
-    .module('testApp', ['hlTableModule'])
-    .config(function(hlTableConfigProvider){
-        hlTableConfigProvider.setTemplatePath('dist/templates/');
-    })
-    .controller('testCtrl', function($rootScope, $scope, $timeout, $log, hlUrlHelper, hlTableConfig, hlDataHelper){
-        $scope.config = {
-            // Define a unique name
-            name: 'test',
-            // URL to get data
-            url: 'data/basic.php',
-            // Params: pageNum = 1, offset = 20, orderBy = '', ascDesc = 'ASC'
-            params: {
-                
-            }
-        };
+        .module('testApp', ['hlTableModule'])
+        .config(function (hlTableConfigProvider) {
+            hlTableConfigProvider.setTemplatePath('dist/templates/');
+        })
+        .controller('testCtrl', function ($rootScope, $scope, $timeout, $log, hlUrlHelper, hlTableConfig, hlDataHelper) {
+            $scope.config = {
+                // Define a unique name
+                name: 'test',
+                // URL to get data
+                url: 'data/basic.php',
+                // Params: pageNum = 1, offset = 20, orderBy = '', ascDesc = 'ASC'
+                params: {},
+                advancedFilter: {
+                    templatePath: 'myModule/advancedFilter.tpl.html'
+                },
+                // Bind for default prop
+                $filter: {
+                    published: '0'
+                }
+            };
 
-        $scope.columns = [
-            {
-                field: 'id',
-                label: 'ID',
-                order: 1,
-                canHide: false,
-                textAlign: 'right',
-                width: '10%',
-                classes: 'id abc'
-            }, {
-                field: 'name',
-                label: 'Name',
-                order: 3,
-                textAlign: 'left',
-                canSort: false
-            }, {
-                field: 'published',
-                label: 'Published',
-                order: 2,
-                textAlign: 'left',
-                width: '10%'
-            }
-        ];
+            // Define column collection
+            $scope.columns = [
+                {
+                    field: 'id',
+                    label: 'ID',
+                    canHide: false,
+                    textAlign: 'right',
+                    width: '6%',
+                    classes: 'id abc'
+                }, {
+                    field: 'name',
+                    label: 'Name',
+                    canSort: false
+                }, {
+                    field: 'published',
+                    label: 'Published',
+                    width: '10%'
+                }, {
+                    label: 'Action',
+                    width: '6%',
+                    textAlign: 'center',
+                    canSort: false
+                }
+            ];
 
-        // Run list
-        hlDataHelper.run($scope.config, 'id');
-    });
+            // Process config data
+            hlDataHelper.run($scope.config, 'id');
+        });
 }

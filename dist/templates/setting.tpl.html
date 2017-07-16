@@ -1,18 +1,34 @@
-<div class="ui top attached menu">
-    <div class="ui category search item">
-        <div class="ui transparent icon input" ng-class="{'loading': config.$dataSearching}">
-            <input class="prompt" type="text" ng-model="config.params.search" placeholder="Search...">
+<div class="ui menu">
+    <div class="ui item">
+        <div class="ui icon input" ng-class="{'loading': config.$dataSearching}">
+            <input ng-model="config.params.search" type="text" placeholder="Search...">
             <i class="search link icon" ng-click="config.$searchData()"></i>
         </div>
     </div>
-    <div class="ui icon button item" sm-popup="'Advanced filter'">
+    <div ng-show="config.advancedFilter" class="ui basic dropdown icon item" sm-dropdown-bind="{action: 'nothing'}">
         <i class="plus icon"></i>
+        <div class="menu">
+            <div class="scrolling menu vertical" style="min-width: 200px !important;">
+                <h5 class="ui header">Advanced filter</h5>
+                <div ng-include="config.advancedFilter.templatePath"></div>
+                <div>
+                    <div class="ui item">
+                        <button ng-click="config.$reloadData()" class="mini ui blue icon button">
+                            Submit
+                        </button>
+                        <button ng-click="config.$resetFilter()" class="mini ui icon button">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="right menu">
         <div class="ui basic right dropdown icon item" sm-dropdown-bind="{action: 'nothing'}">
             <i class="setting icon"></i>
             <div class="menu">
-                <div class="scrolling menu" style="max-height: 200px;">
+                <div class="scrolling menu">
                     <h5 class="ui header">Columns</h5>
                     <div ng-show="col.canHide" ng-repeat="col in columns" class="ui item checkbox">
                         <sm-checkbox model="col.display"
@@ -20,61 +36,14 @@
                                      label="{{col.settingTitle ? col.settingTitle : col.label}}">
                         </sm-checkbox>
                     </div>
-                    <h5 class="ui header">Theme</h5>
+                    <h5 class="ui header">Font size</h5>
                     <div class="ui right action labeled input">
                         <input ng-model="theme.fontSize" type="number" min="8" max="36" placeholder="Font size(px)">
                         <a ng-click="theme.fontSize = 14" href="javascript:void(0);"
                            class="ui teal button">Reset</a>
                     </div>
-                    <br/>
                 </div>
             </div>
         </div>
     </div>
 </div>
-<!--
-<div>
-    <label aria-label="hl-table-setting">Settings</label>
-    <div class="uk-dropdown uk-text-left">
-        <div>
-            <ul>
-                <li>
-                    Show&nbsp;
-                    <sm-dropdown class="selection" model="config.params.offset"
-                                 items="pageSizes" label="item.label" value="item.value"
-                                 style="min-width: 65px;">
-                    </sm-dropdown>
-                    &nbsp;entries
-                </li>
-                <li>
-                    <a ng-click="toggleAll(true)">
-                        Select all
-                    </a>
-                </li>
-                <li>
-                    <a ng-click="toggleAll(false)">
-                        Select none
-                    </a>
-                </li>
-                <li ng-show="col.canHide" ng-repeat="(colIdx, col) in columns">
-                    <label>
-                        <input ng-model="col.display" type="checkbox">
-                        <span ng-bind="col.settingTitle ? col.settingTitle : col.label"></span>
-                    </label>
-                </li>
-                <li>Theme</li>
-                <li>
-                    Font size<br/>
-                    <div>
-                        <div>
-                            <input type="number" ng-model="theme.fontSize" min="8" max="36">
-                        </div>
-                        <div>
-                            <a ng-click="theme.fontSize = 14" href="javascript:void(0);">Reset</a>
-                        </div>
-                    </div>
-                </li>
-            </ul>
-        </div>
-    </div>
-</div>-->
