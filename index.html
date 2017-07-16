@@ -7,18 +7,8 @@
     <meta charset="utf-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link href="bower_components/semantic/dist/semantic.min.css" rel="stylesheet">
 
-    <link rel="stylesheet" type="text/css" href="bower_components/semantic/dist/semantic.min.css">
-    <link rel="stylesheet" type="text/css" href="dist/templates/hl-table-custom.css">
-    <script src="bower_components/jquery/dist/jquery.min.js"></script>
-    <script src="bower_components/semantic/dist/semantic.min.js"></script>
-    <script src="custom.js"></script>
-
-    <script src="bower_components/angular/angular.min.js?v=1.6.4"></script>
-    <script src="bower_components/oclazyload/dist/ocLazyLoad.min.js?v=1.0.10"></script>
-    <script src="bower_components/semantic-ui-angular-jquery/angular-semantic-ui.min.js?v=0.2.1"></script>
-    <script src="dist/hl.directives.js?v=0.0.1"></script>
-    <script src="app.js?v=1.0.0"></script>
     <style>
         [ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
             display: none !important;
@@ -32,10 +22,12 @@
             <div class="ui form">
                 <div class="inline">
                     <div class="field">
-                        <sm-radio name="filter-published" model="config.$filter.published" label="Published" value="'1'">
+                        <sm-radio name="filter-published" model="config.$filter.published" label="Published"
+                                  value="'1'">
                     </div>
                     <div class="field">
-                        <sm-radio name="filter-published" model="config.$filter.published" label="Unpublished" value="'0'">
+                        <sm-radio name="filter-published" model="config.$filter.published" label="Unpublished"
+                                  value="'0'">
                     </div>
                 </div>
             </div>
@@ -44,22 +36,44 @@
             <div class="ui form">
                 <div class="field">
                     <label>Another field</label>
-                    <input ng-model="config.$filter.anotherField" type="text" name="another-field-search" placeholder="Another search...">
+                    <input ng-model="config.$filter.anotherField" type="text" name="another-field-search"
+                           placeholder="Another search...">
                 </div>
             </div>
         </div>
     </script>
     <hl-table columns="columns" config="config">
         <hl-table-row ng-repeat="item in config.$dataList" primary-key="id">
-            <hl-table-col>{{item.id}}</hl-table-col>
-            <hl-table-col>This is a long long long long long content</hl-table-col>
-            <hl-table-col>{{item.published}}</hl-table-col>
-            <hl-table-col>
-                <i class="edit icon"></i>
-                <i class="trash outline icon"></i>
+            <hl-table-col column="col" ng-repeat="col in columns|orderBy:'ordered'">
+                <div ng-switch="col.field">
+                    <div ng-switch-when="id">{{item.id}}</div>
+                    <div ng-switch-when="name">This is a long long long long long content</div>
+                    <div ng-switch-when="published">
+                        <h3>
+                            <i class="icon"
+                               ng-class="{'check circle ui green text': item.published == '1', 'remove circle ui red text': item.published == '0'}"></i>
+                        </h3>
+                    </div>
+                    <div ng-switch-when="action">
+                        <i class="edit icon"></i>
+                        <i class="trash outline icon"></i>
+                    </div>
+                </div>
             </hl-table-col>
         </hl-table-row>
     </hl-table>
+
+    <script src="bower_components/jquery/dist/jquery.min.js" type="text/javascript"></script>
+    <script src="bower_components/semantic/dist/semantic.min.js" type="text/javascript"></script>
+
+    <script src="bower_components/angular/angular.min.js" type="text/javascript"></script>
+    <script src="bower_components/angular-sanitize/angular-sanitize.min.js" type="text/javascript"></script>
+    <script src="bower_components/angular-translate/angular-translate.min.js" type="text/javascript"></script>
+    <script src="bower_components/angular-translate-loader-partial/angular-translate-loader-partial.min.js" type="text/javascript"></script>
+    <script src="bower_components/oclazyload/dist/ocLazyLoad.min.js" type="text/javascript"></script>
+    <script src="bower_components/semantic-ui-angular-jquery/angular-semantic-ui.min.js" type="text/javascript"></script>
+    <script src="dist/hl.directives.js" type="text/javascript"></script>
+    <script src="app.js" type="text/javascript"></script>
 </div>
 </body>
 </html>

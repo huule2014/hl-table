@@ -6,6 +6,22 @@
     cursor: pointer;
 }
 
+.ui.table.hl-table td[align="left"] {
+    text-align: left;
+}
+
+.ui.table.hl-table td[align="right"] {
+    text-align: right;
+}
+
+.ui.table.hl-table td[align="center"] {
+    text-align: center;
+}
+
+.ui.table.hl-table td[align="justify"] {
+    text-align: justify;
+}
+
 .ui.menu .dropdown.item .menu {
     overflow: hidden;
 }

@@ -24,23 +24,23 @@
         filterVar = '$filter',
         resetFilterVar = '$resetFilter';
 
-    angular.module('hlTableModule', ['oc.lazyLoad', 'semantic-ui'])
-        .config(function ($ocLazyLoadProvider) {
+    angular.module('hlTableModule', [
+            'oc.lazyLoad',
+            'semantic-ui',
+            'ngSanitize',
+            'pascalprecht.translate'
+        ])
+        .config(function ($ocLazyLoadProvider, $translateProvider) {
             $ocLazyLoadProvider.config({
                 debug: false,
                 events: false,
-                modules: [
-                    {
-                        name: 'UIForm',
-                        files: [
-                            'bower_components/semantic-ui-form/form.min.css',
-                            'bower_components/semantic-ui-form/form.min.js'
-                        ],
-                        serie: true,
-                        cache: false
-                    }
-                ]
+                modules: []
             });
+
+            $translateProvider.useLoader('$translatePartialLoader', {
+                urlTemplate: 'dist/languages/{lang}.json'
+            });
+            $translateProvider.useSanitizeValueStrategy(null);
         })
         .provider('hlTableConfig', function () {
             return {
@@ -73,17 +73,8 @@
         })
         .run(function ($ocLazyLoad, hlTableConfig) {
             // Load default ocLazyLoad modules
-            $ocLazyLoad.load('UIForm');
-            $ocLazyLoad.load(hlTableConfig.templatePath + 'hl-table-custom.css');
-        })
-        .filter('hlTranslate', function ($http) {
-            return function (str) {
-                if (angular.isDefined(str) && str) {
-                    if (!tempLanguageData) {
 
-                    }
-                }
-            }
+            $ocLazyLoad.load([hlTableConfig.templatePath + 'hl-table-custom.css']);
         })
         // URL helper for all directives
         .factory('hlUrlHelper', function ($browser, $log) {
@@ -124,8 +115,12 @@
                 }
             }
         })
-        .factory('hlDataHelper', function ($rootScope, $q, $timeout, $http, $log, hlElementHelper) {
+        .factory('hlDataHelper', function ($rootScope, $q, $timeout, $http, $log, $translatePartialLoader, $translate, hlElementHelper) {
             var reloadingData = [];
+            
+            $translatePartialLoader.addPart('default');
+            $translate.use('vi');
+            $translate.refresh();
 
             return {
                 run: function (config, primaryKey) {
@@ -358,6 +353,7 @@
                 },
                 templateUrl: hlTableConfig.templatePath + 'table.tpl.html',
                 link: function ($scope, $element, $attrs) {
+
                 }
             }
         })
@@ -449,45 +445,21 @@
                 }
             }
         })
-        .directive('hlTableCol', function ($timeout) {
+        .directive('hlTableCol', function ($timeout, $log) {
             return {
                 restrict: 'E',
                 transclude: true,
                 replace: true,
                 scope: {
-                    textAlign: '@',
-                    customClass: '@'
+                    column: '='
                 },
-                template: '<td ng-class="checkClass()" ng-transclude></td>',
+                template: '<td ng-show="column.display" align="{{column.textAlign}}" ng-transclude></td>',
                 link: function ($scope, $element, $attrs) {
-                    $scope.$watch(function () {
-                        var columnIdx = angular.element($element).index();
-                        var $th = angular.element($element).closest('table').find('th').eq(columnIdx);
-                        return $th.is(":visible");
-                    }, function (newVal, oldVal) {
-                        if (!angular.equals(newVal, oldVal)) {
-                            if (newVal == true) {
-                                angular.element($element).show();
-                            } else {
-                                angular.element($element).hide();
-                            }
-                        }
-                    });
+                    var customClasses = $scope.column.classes || '';
+                    var currentClasses = angular.element($element).attr('class');
 
-                    $timeout(function () {
-                        var columnIdx = angular.element($element).index();
-                        var $th = angular.element($element).closest('table').find('th').eq(columnIdx);
-                        var textAlign = $th.attr('col-text-align');
-                        var customClasses = $th.attr('col-custom-classes');
-                        var currentClasses = angular.element($element).attr('class');
-                        var allowedAlign = ['left', 'right', 'center'];
-                        if (customClasses && allowedAlign.indexOf(textAlign) > -1) {
-                            customClasses += ' ' + textAlign + ' aligned';
-                        }
-
-                        // Assign class
-                        angular.element($element).attr('class', currentClasses + ' ' + customClasses);
-                    });
+                    // Assign class
+                    angular.element($element).attr('class', currentClasses + ' ' + customClasses);
 
                     if (angular.isDefined($attrs.colspan)) {
                         angular.element($element).attr('colspan', $attrs.colspan);
@@ -818,5 +790,4 @@
                 }
             }
         });
-})
-(window.angular);
+})();

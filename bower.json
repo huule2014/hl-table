@@ -5,9 +5,11 @@
     "jquery": "https://github.com/jquery/jquery.git#^3.2.1",
     "angular": "1.6.4",
     "semantic": "semantic-ui#^2.2.11",
-    "semantic-ui-form": "^2.2.11",
     "oclazyload": "^1.1.0",
-    "semantic-ui-angular-jquery": "^0.2.2"
+    "semantic-ui-angular-jquery": "^0.2.2",
+    "angular-translate": "^2.15.2",
+    "angular-sanitize": "^1.6.5",
+    "angular-translate-loader-partial": "^2.15.2"
   },
   "devDependencies": {}
 }

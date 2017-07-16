@@ -2,14 +2,16 @@
     <!-- hl-table-setting -->
     <hl-table-setting columns="columns" config="config"></hl-table-setting>
     <!-- hl-table -->
-    <table id="{{config.$tableName}}" class="hl-table ui selectable celled table unstackable">
+    <table id="{{config.$tableName}}" class="hl-table ui bottom attached selectable celled table unstackable">
         <!-- hl-header -->
         <thead hl-table-header columns="columns" config="config" class="full-width"></thead>
         <!-- hl-body -->
         <tbody ng-show="config.$dataLoading">
         <tr>
             <td colspan="{{columns.length + 1}}">
-                <div class="ui text inline centered loader active">Loading</div>
+                <div class="ui text inline centered loader active">
+                    {{'LOADING'|translate}}
+                </div>
             </td>
         </tr>
         </tbody>

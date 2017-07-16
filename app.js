@@ -18,7 +18,16 @@ if (angular.isDefined(angular)) {
                 // Bind for default prop
                 $filter: {
                     published: '0'
-                }
+                },
+                tools: [
+                    {
+                        template: '<i class="plus icon"></i>',
+                        type: 'icon',
+                        callback: function (e) {
+                            console.log(e);
+                        }
+                    }
+                ]
             };
 
             // Define column collection
@@ -26,23 +35,27 @@ if (angular.isDefined(angular)) {
                 {
                     field: 'id',
                     label: 'ID',
-                    canHide: false,
                     textAlign: 'right',
                     width: '6%',
-                    classes: 'id abc'
+                    display: false,
+                    ordered: 3
                 }, {
                     field: 'name',
                     label: 'Name',
-                    canSort: false
+                    ordered: 2
                 }, {
                     field: 'published',
                     label: 'Published',
-                    width: '10%'
+                    width: '10%',
+                    textAlign: 'center',
+                    ordered: 4
                 }, {
+                    field: 'action',
                     label: 'Action',
                     width: '6%',
                     textAlign: 'center',
-                    canSort: false
+                    canSort: false,
+                    ordered: 1
                 }
             ];
 

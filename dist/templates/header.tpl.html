@@ -5,11 +5,9 @@
     </th>
     <th ng-class="{'{{col.textAlign}} aligned': col.textAlign, 'sortable': col.canSort || col.multiSort}"
         ng-if="col.display"
-        ng-repeat="(colIdx, col) in columns"
+        ng-repeat="(colIdx, col) in columns|orderBy:'ordered'"
         ng-click="col.canSort == true && !col.multiSort ? sortField(col.field):''"
-        ng-style="{'width': col.width}"
-        col-text-align="{{col.textAlign}}"
-        col-custom-classes="{{col.classes}}">
+        ng-style="{'width': col.width}">
         <i ng-show="col.canSort" class="icon" ng-class="{
         'sort': col.canSort == true,
         'descending': !col.multiSort && col.field == config.params.orderBy && config.params.ascDesc == 'DESC',

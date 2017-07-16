@@ -1,4 +1,4 @@
-<div class="ui menu">
+<div class="ui top attached menu">
     <div class="ui item">
         <div class="ui icon input" ng-class="{'loading': config.$dataSearching}">
             <input ng-model="config.params.search" type="text" placeholder="Search...">
@@ -6,7 +6,7 @@
         </div>
     </div>
     <div ng-show="config.advancedFilter" class="ui basic dropdown icon item" sm-dropdown-bind="{action: 'nothing'}">
-        <i class="plus icon"></i>
+        <i class="filter icon"></i>
         <div class="menu">
             <div class="scrolling menu vertical" style="min-width: 200px !important;">
                 <h5 class="ui header">Advanced filter</h5>
@@ -25,6 +25,12 @@
         </div>
     </div>
     <div class="right menu">
+        <a ng-class="{'ui {{tool.type}}': tool.type, 'item': true}"
+           ng-repeat="tool in config.tools|orderBy:'ordered'"
+           ng-click="tool.callback($event)"
+           sm-popup="tool.tooltip"
+           bind-html-compile="tool.template">
+        </a>
         <div class="ui basic right dropdown icon item" sm-dropdown-bind="{action: 'nothing'}">
             <i class="setting icon"></i>
             <div class="menu">
