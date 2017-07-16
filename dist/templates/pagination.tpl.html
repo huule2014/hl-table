@@ -1,0 +1,36 @@
+<div>
+    <div ng-show="numLinks > 1">
+        <span>Showing {{fromRow}} to {{toRow}} of {{config.$totalRows}} entries</span>
+    </div>
+    <div ng-show="numLinks > 1">
+        <div ng-show="pageLimit > 5">
+            <label>Go to</label>
+            <input type="number" class="md-input uk-text-small" list-enter-event="goPage(config.params.pageNum - 1)"/>
+        </div>
+    </div>
+    <div ng-if="pageLinks.length > 1">
+        <div class="simple-pagination">
+            <button ng-show="(config.params.pageNum > 0) && numLinks > 1" ng-click="goPage(0)" class="pagination-item" md-no-ink
+                       aria-label="Go to first page">
+                First
+            </button>
+            <button ng-show="config.params.pageNum > 0" ng-click="goPage(config.params.pageNum - 1)" class="pagination-item" md-no-ink
+                       aria-label="Go to previous page">
+                Prev
+            </button>
+            <button ng-repeat="page in pageLinks" ng-click="goPage(page-1)"
+                       ng-class="{'active': config.params.pageNum == (page - 1)}" md-no-ink
+                       aria-label="Go to page {{page}}">
+                <span>{{page}}</span>
+            </button>
+            <button ng-show="config.params.pageNum < pageLimit -1" ng-click="goPage(config.params.pageNum + 1)" class="pagination-item"
+                       md-no-ink aria-label="Go to next page">
+                Next
+            </button>
+            <button ng-show="(config.params.pageNum < pageLimit -1) && (numLinks > 1)" ng-click="goPage(pageLimit -1)" class="pagination-item"
+                       md-no-ink aria-label="Go to last page">
+                Last
+            </button>
+        </div>
+    </div>
+</div>

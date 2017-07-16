@@ -1,3 +1,38 @@
+<div class="ui top attached menu">
+    <div class="ui category search item">
+        <div class="ui transparent icon input" ng-class="{'loading': config.$dataSearching}">
+            <input class="prompt" type="text" ng-model="config.params.search" placeholder="Search...">
+            <i class="search link icon" ng-click="config.$searchData()"></i>
+        </div>
+    </div>
+    <div class="ui icon button item" sm-popup="'Advanced filter'">
+        <i class="plus icon"></i>
+    </div>
+    <div class="right menu">
+        <div class="ui basic right dropdown icon item" sm-dropdown-bind="{action: 'nothing'}">
+            <i class="setting icon"></i>
+            <div class="menu">
+                <div class="scrolling menu" style="max-height: 200px;">
+                    <h5 class="ui header">Columns</h5>
+                    <div ng-show="col.canHide" ng-repeat="col in columns" class="ui item checkbox">
+                        <sm-checkbox model="col.display"
+                                     name="{{::config.$tableName}}-col-display-{{::col.field}}"
+                                     label="{{col.settingTitle ? col.settingTitle : col.label}}">
+                        </sm-checkbox>
+                    </div>
+                    <h5 class="ui header">Theme</h5>
+                    <div class="ui right action labeled input">
+                        <input ng-model="theme.fontSize" type="number" min="8" max="36" placeholder="Font size(px)">
+                        <a ng-click="theme.fontSize = 14" href="javascript:void(0);"
+                           class="ui teal button">Reset</a>
+                    </div>
+                    <br/>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--
 <div>
     <label aria-label="hl-table-setting">Settings</label>
     <div class="uk-dropdown uk-text-left">
@@ -42,4 +77,4 @@
             </ul>
         </div>
     </div>
-</div>
+</div>-->

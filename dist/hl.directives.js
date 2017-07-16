@@ -7,7 +7,20 @@
  */
 (function () {
     'use strict';
-    var appPath = null, templatePath = null;
+    var appPath = null, templatePath = null, language = 'en', tempLanguageData = {};
+
+    // Define var name
+    var loadingVar = '$dataLoading',
+        listVar = '$dataList',
+        totalRowsVar = '$totalRows',
+        reloadFunctionName = '$reloadData',
+        tableNameVar = '$tableName',
+        selectAllVar = '$selectAll',
+        selectedItemsVar = '$selectedItems',
+        selectItemFunctionName = '$selectItem',
+        allPrimaryKey = '$allPrimaryKey',
+        dataSearchingVar = '$dataSearching',
+        searchDataFunctionName = '$searchData';
 
     angular.module('hlTableModule', ['oc.lazyLoad', 'semantic-ui'])
         .config(function ($ocLazyLoadProvider) {
@@ -32,6 +45,13 @@
                 getAppPath: function () {
                     return appPath;
                 },
+                setLanguage: function (value) {
+                    if (angular.isDefined(value)) {
+                        language = value
+                    } else {
+                        $log.error('No language to set.');
+                    }
+                },
                 setTemplatePath: function (value) {
                     if (angular.isDefined(value)) {
                         templatePath = value;
@@ -43,6 +63,7 @@
                     return {
                         appPath: appPath,
                         templatePath: templatePath,
+                        language: language,
                         limitToShow: 50
                     }
                 }
@@ -52,6 +73,15 @@
             // Load default ocLazyLoad modules
             $ocLazyLoad.load('UIForm');
             $ocLazyLoad.load(hlTableConfig.templatePath + 'hl-table-custom.css');
+        })
+        .filter('hlTranslate', function ($http) {
+            return function (str) {
+                if (angular.isDefined(str) && str) {
+                    if (!tempLanguageData) {
+
+                    }
+                }
+            }
         })
         // URL helper for all directives
         .factory('hlUrlHelper', function ($browser, $log) {
@@ -98,19 +128,14 @@
             return {
                 run: function (config, primaryKey) {
                     if (angular.isDefined(config) && angular.isDefined(config.name)) {
-                        var loadingVar = '$dataLoading',
-                            listVar = '$dataList',
-                            totalRowsVar = '$totalRows',
-                            reloadFunctionName = '$reloadData',
-                            tableNameVar = '$tableName',
-                            selectAllVar = '$selectAll',
-                            selectedItemsVar = '$selectedItems',
-                            selectItemFunctionName = '$selectItem',
-                            allPrimaryKey = '$allPrimaryKey';
 
                         /** Set select all status */
                         if (angular.isUndefined(config[selectAllVar])) {
                             config[selectAllVar] = false;
+                        }
+
+                        if (angular.isUndefined(config[dataSearchingVar])) {
+                            config[dataSearchingVar] = false;
                         }
 
                         if (angular.isDefined(config.name)
@@ -123,6 +148,11 @@
                             /** Set firstLoad status */
                             if (angular.isUndefined(config.params.firstLoad)) {
                                 config.params.firstLoad = true;
+                            }
+
+                            /** Set default filter */
+                            if (angular.isUndefined(config.params.search)) {
+                                config.params.search = null;
                             }
 
                             /** Set table name */
@@ -160,7 +190,6 @@
                             };
 
                             angular.extend(config.params, defaultParams);
-
 
                             var reloadDataFunction = function (deferReturn) {
                                 /** Set dataLoading status */
@@ -244,6 +273,7 @@
                                         /** Reset dataLoading to false */
                                         $timeout(function () {
                                             config[loadingVar] = false;
+                                            config[dataSearchingVar] = false;
                                         }, 500);
                                     });
 
@@ -258,6 +288,15 @@
                             // Define reload function
                             config[reloadFunctionName] = function () {
                                 reloadDataFunction();
+                            };
+
+                            // Define search data function
+                            config[searchDataFunctionName] = function () {
+                                if (!config[dataSearchingVar]) {
+                                    config.params.pageNum = 0;
+                                    config[dataSearchingVar] = true;
+                                    reloadDataFunction();
+                                }
                             };
 
                         } else {
@@ -370,8 +409,13 @@
                     });
 
                     if (angular.isDefined($scope.primaryKey)) {
-                        var checkboxColumn = angular.element('<td>' +
-                            '<sm-checkbox model="primaryKey"></sm-checkbox>' +
+                        var checkboxColumn = angular.element('<td width="40">' +
+                            '<div class="ui checkbox">' +
+                            '<input type="checkbox" ng-checked="config.$selectedItems.indexOf(item[\'' + $scope.primaryKey + '\']) > -1" ' +
+                            'ng-click="config.$selectItem(item[\'' + $scope.primaryKey + '\'])" ' +
+                            ' name="hl-row-check-box-{{item[\'' + $scope.primaryKey + '\']}}" >' +
+                            '<label></label>' +
+                            '</div>' +
                             '</td>');
                         angular.element($element).prepend(checkboxColumn);
                         $compile(checkboxColumn)($scope.$parent);
@@ -512,144 +556,119 @@
                 }
             }
         })
-        .directive('travisPagination', function ($rootScope, $timeout, $window) {
+        .directive('hlTablePagination', function ($rootScope, $timeout, $window, hlTableConfig) {
             return {
-                restrict: 'A',
-                $scope: {
-                    totalRows: '=',
-                    request: '=',
-                    showFilter: '=',
-                    reloadFunction: '&'
+                restrict: 'E',
+                scope: {
+                    config: '='
                 },
-                templateUrl: 'app/libs/travis/travisPagination.tpl.html',
+                templateUrl: hlTableConfig.templatePath + 'pagination.tpl.html',
                 link: function ($scope, element, attrs) {
-                    $scope.$watch('totalRows', function (newVal, oldVal) {
-                        if (newVal) {
-                            $scope.total_rows = newVal;
-                            $scope.page_num = 0;
-
+                    $scope.$watch('config.' + totalRowsVar, function (newVal, oldVal) {
+                        if (newVal && !angular.equals(newVal, oldVal)) {
+                            $scope.config.params.pageNum = 0;
                             $scope.buildPagination();
                         }
                     });
 
-                    if (angular.isUndefined(attrs.reloadFunction)) {
-                        console.error('travisPagination: reload function not found');
-                    }
+                    $scope.fromRow = 0;
+                    $scope.toRow = 0;
+                    $scope.numLinks = 5;
 
-                    $scope.pagiCenter = false;
-                    $scope.page_num = 0;
-                    $scope.from_row = 0;
-                    $scope.to_row = 0;
-                    $scope.num_links = 5;
-
-                    $timeout(function () {
-                        $scope.total_rows = $scope.totalRows;
-                        $scope.records_per_page = $scope.request.offset;
-
-                        $scope.buildPagination();
-                    });
-
-                    $scope.buildPagination = function (reload_data) {
+                    $scope.buildPagination = function (reloadData) {
                         /**
-                         * Fix page_num greater than total rows
+                         * Fix pageNum greater than total rows
                          */
-                        if ($scope.request.offset * $scope.request.page_num > $scope.totalRows) {
-                            $scope.request.page_num = 0;
+                        if ($scope.config.params.offset * $scope.config.params.pageNum > $scope.config.$totalRows) {
+                            $scope.config.params.pageNum = 0;
                         }
 
-                        /** reset page_num after load request file */
-                        $scope.page_num = $scope.request.page_num;
+                        $scope.pageLinks = [];
+                        $scope.fromRow = 0;
+                        $scope.toRow = 0;
 
-                        $scope.page_links = [];
-                        $scope.total_rows = $scope.totalRows;
-                        $scope.from_row = 0;
-                        $scope.to_row = 0;
-                        $scope.records_per_page = $scope.request.offset;
-
-                        if ($scope.total_rows > 0) {
-                            $scope.from_row = ($scope.records_per_page * $scope.page_num) + 1;
+                        if ($scope.config.$totalRows > 0) {
+                            $scope.fromRow = ($scope.config.params.offset * $scope.config.params.pageNum) + 1;
                         } else {
-                            $scope.from_row = 0;
+                            $scope.fromRow = 0;
                         }
 
-                        $scope.to_row = $scope.records_per_page * ($scope.page_num + 1);
+                        $scope.toRow = $scope.config.params.offset * ($scope.config.params.pageNum + 1);
                         //fix to_row if more than total rows
-                        if ($scope.to_row > $scope.total_rows) {
-                            $scope.to_row = $scope.total_rows;
+                        if ($scope.toRow > $scope.config.$totalRows) {
+                            $scope.toRow = $scope.config.$totalRows;
                         }
 
-                        if ($scope.total_rows % $scope.records_per_page > 0) {
-                            $scope.page_limit = (Math.floor($scope.total_rows / $scope.records_per_page)) + 1;
+                        if ($scope.config.$totalRows % $scope.config.params.offset > 0) {
+                            $scope.pageLimit = (Math.floor($scope.config.$totalRows / $scope.config.params.offset)) + 1;
                         } else {
-                            $scope.page_limit = $scope.total_rows / $scope.records_per_page;
+                            $scope.pageLimit = $scope.config.$totalRows / $scope.config.params.offset;
                         }
 
-                        if ($scope.page_limit <= $scope.num_links) {
-                            $scope.page_range = [1, $scope.page_limit];
+                        if ($scope.pageLimit <= $scope.numLinks) {
+                            $scope.page_range = [1, $scope.pageLimit];
                         } else {
-                            var page_min = 0;
-                            var page_max = 0;
+                            var pageMin = 0;
+                            var pageMax = 0;
 
-                            if ($scope.page_num - Math.floor($scope.num_links / 2) > 0) {
-                                page_min = $scope.page_num - Math.floor($scope.num_links / 2) + 1;
+                            if ($scope.pageNum - Math.floor($scope.numLinks / 2) > 0) {
+                                pageMin = $scope.pageNum - Math.floor($scope.numLinks / 2) + 1;
                             } else {
-                                page_min = 1;
+                                pageMin = 1;
                             }
 
-                            if (page_min == 1) {
-                                page_max = $scope.num_links;
+                            if (pageMin == 1) {
+                                pageMax = $scope.numLinks;
                             } else {
-                                if ($scope.page_num + Math.floor($scope.num_links / 2) < $scope.page_limit + 1) {
-                                    page_max = $scope.page_num + Math.floor($scope.num_links / 2) + 1;
-                                    if (page_max > $scope.page_limit) {
-                                        page_min -= 1;
-                                        page_max -= 1;
+                                if ($scope.pageNum + Math.floor($scope.numLinks / 2) < $scope.pageLimit + 1) {
+                                    pageMax = $scope.pageNum + Math.floor($scope.numLinks / 2) + 1;
+                                    if (pageMax > $scope.pageLimit) {
+                                        pageMin -= 1;
+                                        pageMax -= 1;
                                     }
                                 } else {
-                                    page_min = $scope.page_num - Math.floor($scope.num_links / 2) - ($scope.num_links % 2);
-                                    page_max = $scope.page_limit;
+                                    pageMin = $scope.pageNum - Math.floor($scope.numLinks / 2) - ($scope.numLinks % 2);
+                                    pageMax = $scope.pageLimit;
                                 }
                             }
 
-                            $scope.page_range = [page_min, page_max];
+                            $scope.page_range = [pageMin, pageMax];
                         }
 
                         for (var i = $scope.page_range[0]; i < $scope.page_range[1] + 1; i++) {
-                            $scope.page_links.push(i);
+                            $scope.pageLinks.push(i);
                         }
 
-                        if ((angular.isDefined(reload_data) && reload_data)) {
+                        if ((angular.isDefined(reloadData) && reloadData)) {
                             //console.log('Pagination');
-                            $scope.reloadFunction();
+                            $scope.config.$reloadData();
                         }
                     };
 
-                    $scope.goPage = function (page_num) {
+                    $scope.goPage = function (pageNum) {
                         var reload = false;
 
-                        if (page_num < 0) {
-                            page_num = 0;
+                        if (pageNum < 0) {
+                            pageNum = 0;
                         }
 
-                        if (page_num >= $scope.page_limit) {
-                            page_num = $scope.page_limit - 1;
+                        if (pageNum >= $scope.pageLimit) {
+                            pageNum = $scope.pageLimit - 1;
                         }
 
-                        if (page_num != $scope.page_num && page_num >= 0 && page_num <= $scope.page_limit) {
+                        if (pageNum != $scope.pageNum && pageNum >= 0 && pageNum <= $scope.pageLimit) {
                             reload = true;
                         }
 
                         if (reload) {
-                            $scope.page_num = page_num;
-                            $scope.request.page_num = page_num;
+                            $scope.config.params.pageNum = pageNum;
                             $scope.buildPagination(true);
                         }
                     };
 
                     //pagasize handler
                     var offsetCounter = 0;
-                    $scope.$watch("request.offset", function (newVal, oldVal) {
-                        //console.log(offsetCounter);
+                    $scope.$watch("config.params.offset", function (newVal, oldVal) {
                         if (newVal == 25 && oldVal == 25) {
                             offsetCounter += 1;
                         }
@@ -660,8 +679,7 @@
                                 $scope.request.offset = 25;
                             }
 
-                            $scope.page_num = 0;
-                            //console.log('watch offset');
+                            $scope.config.params.pageNum = 0;
 
                             if (offsetCounter > 1) {
                                 $scope.buildPagination(true);
@@ -672,138 +690,6 @@
 
                         offsetCounter++
                     });
-
-                    //page number changing handler
-                    $scope.$watch("page_num", function (val) {
-                        if (angular.isDefined(val) && angular.isNumber(val)) {
-                            $scope.page_num_input = val + 1;
-                        }
-                    }, true);
-
-                    $scope.paginationMini = false;
-
-                    /*scope.$watch(function () {
-                     return angular.element(element).find('.uk-pagination').width();
-                     }, function (newWidth) {
-                     var windowWidth = angular.element(element).closest('.md-card-content').width();
-                     console.log(newWidth + '/' + windowWidth);
-
-                     if (angular.isDefined(newWidth) && newWidth != null && newWidth != 0) {
-                     if (newWidth <= 320) {
-                     $scope.paginationMini = true;
-                     $scope.pagiCenter = true;
-                     } else {
-                     var fix = 0;
-                     if($scope.page_num > 0){
-                     fix = fix + (48*2);
-                     }
-
-                     if($scope.page_num < $scope.page_limit -1){
-                     fix = fix + (48*2);
-                     }
-
-                     $scope.num_links = Math.ceil((newWidth- fix - 100) / 48);
-
-                     if($scope.num_links > 5){
-                     $scope.num_links = 5;
-                     }
-
-                     $scope.paginationMini = false;
-                     $scope.pagiCenter = false;
-                     }
-                     }
-                     });*/
-                }
-            }
-        })
-        .directive('travisCheckall', function ($timeout) {
-            return {
-                restrict: 'A',
-                $scope: {
-                    listData: '=',
-                    selectedList: '=',
-                    label: '=',
-                    request: '='
-                },
-                template: '<md-checkbox md-no-ink ng-model="check_all" ng-change="checkAllItem()" aria-label="check_all" style="margin-bottom: 0;"><span ng-if="label" class="uk-text-bold" >&nbsp;&nbsp;{{label}}</span></md-checkbox>',
-                link: function ($scope, element, attrs) {
-                    $scope.check_all = false;
-
-                    if (angular.isDefined($scope.request)) {
-                        $scope.$watch('request.page_num', function (new_val, old_val) {
-                            if (new_val != old_val) {
-                                $scope.check_all = false;
-                                $scope.selectedList = [];
-                            }
-                        });
-                    }
-
-                    $scope.checkAllItem = function () {
-                        if (angular.isDefined($scope.selectedList)) {
-                            if (angular.isDefined($scope.listData) && $scope.listData.length) {
-                                angular.forEach($scope.listData, function (item, idx) {
-                                    item.is_checked = $scope.check_all;
-
-                                    if ($scope.check_all == true) {
-                                        if (jQuery.inArray(item.id, $scope.selectedList) == -1) {
-                                            $scope.selectedList.push(item.id);
-                                        }
-                                    } else {
-                                        if (jQuery.inArray(item.id, $scope.selectedList) > -1) {
-                                            $scope.selectedList.splice($scope.selectedList.indexOf(item.id), 1);
-                                        }
-                                    }
-                                });
-                            }
-                        }
-                    };
-
-                    /**
-                     * Uncheck check-all checkbox
-                     */
-                    $timeout(function () {
-                        $scope.$watch('selectedList', function (newVal) {
-                            if (newVal && newVal.length == 0) {
-                                $scope.check_all = false;
-                            }
-                        }, true);
-                    });
-                }
-            }
-        })
-        .directive('travisCheckboxItem', function ($timeout) {
-            return {
-                restrict: 'E',
-                require: 'ngModel',
-                $scope: {
-                    selectedList: '='
-                },
-                template: '<md-checkbox md-no-ink ng-model="ngModel" aria-label="checkbox_item"></md-checkbox>',
-                link: function ($scope, element, attrs, ngModel) {
-
-                    element.on('click', function () {
-                        if (jQuery.inArray(ngModel.$viewValue, $scope.selectedList) == -1) {
-                            $scope.selectedList.push(ngModel.$viewValue);
-                        } else {
-                            $scope.selectedList.splice($scope.selectedList.indexOf(ngModel.$viewValue), 1);
-                        }
-                    });
-
-                    $scope.$watch(function () {
-                        return $scope.selectedList;
-                    }, function (new_val) {
-                        var selectedList = new_val;
-
-                        if (angular.isDefined(selectedList)) {
-                            if (jQuery.inArray(ngModel.$viewValue, selectedList) > -1) {
-                                element.find('md-checkbox').addClass('md-checked');
-                                element.closest('tr').addClass('selected');
-                            } else {
-                                element.find('md-checkbox').removeClass('md-checked');
-                                element.closest('tr').removeClass('selected');
-                            }
-                        }
-                    }, true);
                 }
             }
         })
@@ -833,76 +719,6 @@
                 }
             };
         }])
-        .directive('velocityList', function ($timeout, variables) {
-            return {
-                restrict: 'A',
-                transclude: true,
-                template: '<span data-uk-tooltip="{pos:\'top-right\'}" title="{{scope.content}}"><ng-transclude></ng-transclude></span>',
-                link: function ($scope, element, attrs) {
-                    $timeout(function () {
-                        element.on('click', '.md-card-list ul > li', function (e) {
-                            var $this = $(this);
-
-                            if (!$this.hasClass('item-shown')) {
-                                if (!$this.hasClass('not-click')) {
-                                    //Add cursor pointer
-                                    $this.css({'cursor': 'pointer'});
-
-                                    // get height of clicked message
-                                    var el_min_height = $this.height() + $this.children('.md-card-list-item-content-wrapper').actual("height");
-
-                                    // hide opened message
-                                    element.find('.item-shown').velocity("reverse", {
-                                        begin: function (elements) {
-                                            $(elements).removeClass('item-shown').children('.md-card-list-item-content-wrapper').hide().velocity("reverse");
-                                        }
-                                    });
-
-                                    // show message
-                                    $this.velocity({
-                                        marginTop: 40,
-                                        marginBottom: 40,
-                                        marginLeft: 0,
-                                        marginRight: 0,
-                                        minHeight: el_min_height
-                                    }, {
-                                        duration: 200,
-                                        easing: variables.easing_swiftOut,
-                                        begin: function (elements) {
-                                            $(elements).addClass('item-shown');
-                                        },
-                                        complete: function (elements) {
-                                            // show: message content, reply form
-                                            $(elements).children('.md-card-list-item-content-wrapper').show().velocity({
-                                                opacity: 1
-                                            });
-
-                                            // scroll to message
-                                            var container = $('body'),
-                                                scrollTo = $(elements);
-                                            container.animate({
-                                                scrollTop: scrollTo.offset().top - $('#page_content').offset().top - 8
-                                            }, 500, variables.bez_easing_swiftOut);
-
-                                        }
-                                    });
-                                }
-                            } else {
-                                element.find('.item-shown').velocity("reverse", {
-                                    begin: function (elements) {
-                                        $(elements).removeClass('item-shown').children('.md-card-list-item-content-wrapper').hide().velocity("reverse");
-                                    }
-                                });
-                            }
-                        });
-                    });
-                }
-            }
-        })
-        /**
-         * Draggle element
-         * @author HuuLe
-         */
         .directive('myDraggable', ['$document', function ($document) {
             return {
                 link: function ($scope, element, attr) {
@@ -940,503 +756,6 @@
                 }
             };
         }])
-        /**
-         * Toggle published field
-         * @author HuuLe
-         */
-        .directive('toggleData', function ($rootScope, $timeout, $mdDialog, sTravis) {
-            return {
-                restrict: 'E',
-                $scope: {
-                    ngModel: '=',
-                    refId: '=',
-                    confirm: '=',
-                    options: '=',
-                    disabled: '@',
-                    tableName: '@',
-                    fieldName: '@'
-                },
-                template: '<a ng-if="!disabled" ng-hide="ngModel == -999" ng-click="updateField($event)">' +
-                '<i class="{{ ngModel == options.true.value ? options.true.class : (ngModel == options.false.value ? options.false.class : \'icon-alert-circle uk-text-muted s24\') }}"></i>' +
-                '</a><i ng-if="disabled" class="{{ ngModel == options.true.value ? options.true.class : (ngModel == options.false.value ? options.false.class : \'icon-alert-circle uk-text-muted s24\') }}"></i>' +
-                '<md-preloader ng-show="ngModel == -999" width="24" height="24"></md-preloader>',
-                link: function ($scope, element, attrs) {
-                    if (angular.isUndefined($scope.disabled)) {
-                        $scope.disabled = false;
-                    }
-
-                    if (angular.isUndefined($scope.options)) {
-                        $scope.options = {
-                            true: {
-                                class: 'icon-check uk-text-success s24',
-                                value: '1'
-                            },
-                            false: {
-                                class: 'icon-close uk-text-danger s24',
-                                value: '0'
-                            }
-                        };
-                    } else {
-                        if (angular.isUndefined($scope.options.true)) {
-                            $scope.options.true = {
-                                class: 'icon-check uk-text-success s24',
-                                value: '1'
-                            };
-                        } else {
-                            if (angular.isUndefined($scope.options.true.class)) {
-                                $scope.options.true.class = 'icon-check uk-text-success s24';
-                            }
-
-                            if (angular.isUndefined($scope.options.true.value)) {
-                                $scope.options.true.value = '1';
-                            }
-                        }
-
-                        if (angular.isUndefined($scope.options.false)) {
-                            $scope.options.false = {
-                                class: 'icon-close uk-text-danger s24',
-                                value: '0'
-                            };
-                        } else {
-                            if (angular.isUndefined($scope.options.false.class)) {
-                                $scope.options.false.class = 'icon-close uk-text-danger s24';
-                            }
-
-                            if (angular.isUndefined($scope.options.false.value)) {
-                                $scope.options.false.value = '0';
-                            }
-                        }
-                    }
-
-                    $scope.showConfirm = function (ev) {
-                        var confirm = $mdDialog.confirm({
-                                onShowing: function ($scope, element) {
-                                    $timeout(function () {
-
-                                        var mdDialog = $(element[0]).find('md-dialog');
-                                        var buttons = $(mdDialog.find('md-dialog-actions')).children();
-                                        mdDialog.css({width: '400px'});
-
-                                        $(buttons[0]).removeClass('md-primary');
-                                    });
-                                }
-                            })
-                            .title((angular.isDefined($scope.confirm.title) ? $scope.confirm.title : 'Update field?'))
-                            .textContent('')
-                            .ariaLabel('Update field')
-                            .targetEvent(ev)
-                            .ok('OK')
-                            .cancel('Cancel');
-
-                        return $mdDialog.show(confirm);
-                    };
-
-                    $scope.updateField = function () {
-                        if (angular.isDefined($scope.confirm)) {
-                            $scope.showConfirm().then(function () {
-                                $scope.updateData();
-                            });
-                        } else {
-                            $scope.updateData();
-                        }
-                    };
-
-                    $scope.updateData = function () {
-                        var bkVal = angular.copy($scope.ngModel);
-                        var newVal = $scope.ngModel == $scope.options.true.value ? $scope.options.false.value : $scope.options.true.value;
-                        var updateField = angular.isDefined($scope.fieldName) ? $scope.fieldName : 'published';
-                        var updateParams = {};
-                        updateParams[updateField] = newVal;
-
-                        var updateData = {
-                            tableName: $scope.tableName,
-                            refId: $scope.refId,
-                            updateData: updateParams
-                        };
-
-                        $scope.ngModel = -999;
-                        $rootScope.content_preloader_show();
-
-                        sTravis.$qHttpPost({
-                            url: $rootScope.model + "directive/updateField",
-                            request: updateData
-                        }).then(function (response) {
-                            var status = '';
-                            var result = response.data.dataResponse;
-                            if (result.success) {
-                                $scope.ngModel = newVal;
-                                status = 'success';
-                            } else {
-                                $scope.ngModel = bkVal;
-                                status = 'error';
-                            }
-
-                            UIkit.notify({
-                                message: result.msg,
-                                status: status,
-                                timeout: 3000,
-                                pos: 'top-center'
-                            });
-                            $rootScope.content_preloader_hide();
-                        }, function (error) {
-                            console.log(error);
-
-                            $scope.ngModel = bkVal;
-                            $rootScope.content_preloader_hide();
-                        });
-                    };
-                }
-            }
-        })
-        .directive('travisSelection', function ($rootScope, $timeout, $q, sTravis) {
-            function checkDataDefined(item) {
-                var undefinedCounter;
-
-                if (angular.isDefined(item) && item) {
-                    if (angular.isObject(item) && Object.keys(item).length > 0) {
-                        undefinedCounter = 0;
-                        angular.forEach(item, function (value, key) {
-                                if (typeof value === 'undefined') {
-                                    undefinedCounter++;
-                                }
-                            }
-                        );
-
-                        if (Object.keys(item).length === undefinedCounter) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    } else if (angular.isArray(item) && item.length > 0) {
-                        undefinedCounter = 0;
-                        angular.forEach(item, function (value, key) {
-                                if (typeof value === 'undefined') {
-                                    undefinedCounter++;
-                                }
-                            }
-                        );
-
-                        if (Object.keys(item).length === undefinedCounter) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-                    else {
-                        return true;
-                    }
-                } else {
-                    return false;
-                }
-            }
-
-            return {
-                restrict: 'E',
-                $scope: {
-                    ngModel: '=',
-                    disabled: '=',
-                    requestParam: '=',
-                    asyncResolved: '=',
-                    waiting: '=',
-                    requestUrl: '@',
-                    type: '@',
-                    textField: '@',
-                    valueField: '@',
-                    placeholder: '@'
-                },
-                templateUrl: function (element, attrs) {
-                    var allowedType = ['combo-box', 'drop-down-list', 'multi-select'];
-                    if (angular.isDefined(attrs.type) && allowedType.indexOf(attrs.type) > -1) {
-                        return 'app/libs/travis/selection/' + attrs.type + '.tpl.html';
-                    } else {
-                        console.error('[Dir]travis-selection: Invalid type.')
-                    }
-                },
-                link: function ($scope, element, attrs) {
-                    $scope.dataSource = undefined;
-
-                    if (angular.isUndefined($scope.waiting)) {
-                        $scope.waiting = false;
-                    }
-
-                    if (angular.isUndefined($scope.disabled)) {
-                        $scope.disabled = false;
-                    }
-
-                    $scope.kendoMultiSelectConfig = {
-                        placeholder: $scope.placeholder,
-                        dataTextField: $scope.textField,
-                        dataValueField: $scope.valueField,
-                        valuePrimitive: true,
-                        autoBind: false,
-                        filter: false,
-                        autoClose: false
-                    };
-
-                    if (angular.isUndefined($scope.requestParam)) {
-                        $scope.requestParam = {};
-                    }
-
-                    function loadData() {
-                        $scope.sourceLoading = true;
-
-                        sTravis.$qHttpPost({
-                                url: $rootScope.model + $scope.requestUrl,
-                                request: $scope.requestParam
-                            })
-                            .then(function (response) {
-                                var result = response.data.dataResponse;
-                                if (result) {
-                                    $scope.dataSource = result;
-                                } else {
-                                    $scope.dataSource = [];
-                                }
-
-                                $scope.sourceLoading = false;
-                            }, function (error) {
-                                console.error(error);
-                            });
-                    }
-
-                    $scope.$watch('requestParam', function (newVal, oldVal) {
-                        if (newVal && checkDataDefined(newVal) || angular.isUndefined($scope.dataSource)) {
-                            loadData();
-                        }
-                    });
-                }
-            }
-        })
-        .directive('travisDatePicker', function ($rootScope, $timeout, $mdpDatePicker, $mdpTimePicker) {
-            return {
-                restrict: 'E',
-                $scope: {
-                    ngModel: '=',
-                    dateFormat: '@'
-                },
-                templateUrl: function (element, attrs) {
-                    var allowedType = ['single', 'multi', 'range'];
-
-                    if (angular.isDefined(attrs.type) && allowedType.indexOf(attrs.type) > -1) {
-                        return 'app/libs/travis/date-picker/' + attrs.type + '.tpl.html';
-                    } else {
-                        console.error('[Dir]travis-date-picker: invalid type.');
-                        return false;
-                    }
-                },
-                link: function ($scope, element, attrs) {
-                    //Config
-                    $scope.selectizeOptions = [];
-                    $scope.selectizeConfig = {
-                        plugins: {
-                            'remove_button': {
-                                label: ''
-                            }
-                        },
-                        maxItems: null,
-                        valueField: 'id',
-                        labelField: 'title',
-                        searchField: 'title',
-                        placeholder: 'Select a date',
-                        create: true
-                    };
-
-                    if (angular.isUndefined($scope.dateFormat)) {
-                        $scope.dateFormat = 'YYYY-MM-DD'; //2016-01-01
-                    }
-
-                    //Format date
-                    $scope.formatDate = function (val, strFormat) {
-                        var d = moment(val);
-                        if (angular.isUndefined(strFormat)) {
-                            strFormat = 'YYYY-MM-DD';
-                        }
-                        return d.format(strFormat);
-                    };
-
-                    if (angular.isDefined(attrs.type)) {
-                        if (angular.isUndefined($scope.ngModel) || !scope.ngModel) {
-                            switch (attrs.type) {
-                                case 'single':
-                                    $scope.ngModel = $scope.formatDate(new Date(), $scope.dateFormat);
-                                    break;
-                                case 'multi':
-                                    $scope.ngModel = [];
-                                    break;
-                                case 'range':
-                                    $scope.ngModel = [null, null];
-                                    break;
-                            }
-                        }
-                    }
-
-                    // Date Picker
-                    $scope.showDatePicker = function (ev, strFormat, idx) {
-                        switch (attrs.type) {
-                            case 'single':
-                                var currentDate = $scope.ngModel ? $scope.ngModel : new Date();
-
-                                $mdpDatePicker(currentDate, {targetEvent: ev}).then(function (date) {
-                                    $scope.ngModel = $scope.formatDate(date, strFormat);
-                                });
-                                break;
-                            case 'multi':
-                                var currentDate = new Date();
-
-                                $mdpDatePicker(currentDate, {targetEvent: ev}).then(function (date) {
-                                    var newDate = $scope.formatDate(date, strFormat);
-                                    if (angular.isArray($scope.ngModel) && $scope.ngModel.indexOf(newDate) == -1) {
-                                        $scope.ngModel.push(newDate);
-                                    }
-                                });
-                                break;
-                            case 'range':
-                                var currentDate = $scope.ngModel[idx] ? $scope.ngModel[idx] : new Date();
-
-                                var config = {};
-
-                                if (idx === 1) {
-                                    config = {
-                                        targetEvent: ev,
-                                        minDate: $scope.ngModel[0]
-                                    };
-                                } else {
-                                    config = {
-                                        targetEvent: ev,
-                                        maxDate: $scope.ngModel[1]
-                                    };
-                                }
-
-                                $mdpDatePicker(currentDate, config).then(function (date) {
-                                    $scope.ngModel[idx] = $scope.formatDate(date, strFormat);
-                                });
-                                break;
-                        }
-                    };
-
-                    //Reset date
-                    $scope.resetDate = function () {
-                        if (angular.isDefined(attrs.type)) {
-                            switch (attrs.type) {
-                                case 'single':
-                                    $scope.ngModel = null;
-                                    break;
-                                case 'multi':
-                                    $scope.ngModel = [];
-                                    break;
-                                case 'range':
-                                    $scope.ngModel = [null, null];
-                                    break;
-                            }
-                        }
-                    };
-
-                    // Remove date
-                    $scope.removeDate = function (date) {
-                        if ($scope.ngModel.indexOf(date) > -1) {
-                            $scope.ngModel.splice($scope.ngModel.indexOf(date), 1);
-                        }
-                    };
-                }
-            }
-        })
-        .directive('travisExportBtn', function ($rootScope, $timeout, $window, $filter, sTravis) {
-            return {
-                restrict: 'E',
-                transclude: true,
-                template: '<ng-transclude ng-hide="exportDownloading"></ng-transclude><md-preloader ng-show="exportDownloading" stroke-width="4" width="24" height="24"></md-preloader>',
-                $scope: {
-                    params: '=',
-                    currentTotal: '=',
-                    shortCode: '@'
-                },
-                link: function ($scope, element, attrs) {
-                    function showNotify(message, status, timeout, group, position, callback) {
-                        var w = angular.element($window);
-
-                        var thisNotify = UIkit.notify({
-                            message: message,
-                            status: status ? status : '',
-                            timeout: timeout ? timeout : 5000,
-                            group: group ? group : '',
-                            pos: position ? position : 'top-center',
-                            onClose: function () {
-                                $('body').find('.md-fab-wrapper').css('margin-bottom', '');
-                                clearTimeout(thisNotify.timeout);
-
-                                if (callback) {
-                                    if (angular.isFunction(callback())) {
-                                        $scope.$apply(callback());
-                                    } else {
-                                        console.log('Callback is not a function');
-                                    }
-                                }
-
-                            }
-                        });
-                        if (
-                            ( (w.width() < 768) && (
-                                (position == 'bottom-right')
-                                || (position == 'bottom-left')
-                                || (position == 'bottom-center')
-                            ) )
-                            || (position == 'bottom-right')
-                        ) {
-                            var thisNotify_height = $(thisNotify.element).outerHeight(),
-                                spacer = (w.width() < 768) ? -6 : 8;
-                            $('body').find('.md-fab-wrapper').css('margin-bottom', thisNotify_height + spacer);
-                        }
-                    };
-
-                    $(element).on('click', function (ev) {
-                        if (angular.isDefined($scope.currentTotal) && $scope.currentTotal !== '' && $scope.currentTotal !== null) {
-                            var currentTotal = parseInt($scope.currentTotal);
-
-                            if (currentTotal === 0) {
-                                showNotify('No data.', 'warning');
-                            } else if (currentTotal > 2000) {
-                                showNotify('Data is over <b>' + $filter('number')(2000) + ' rows</b>. Please <b>change the filter</b> and try again.', 'warning');
-                            } else {
-                                if (angular.isDefined($scope.shortCode)) {
-                                    $scope.exportDownloading = true;
-
-                                    sTravis.$qHttpPost({
-                                        url: $rootScope.model + 'export/download/' + $scope.shortCode,
-                                        request: $scope.params
-                                    }).then(function (response) {
-                                        var result = response.data.dataResponse;
-
-                                        if (result) {
-                                            if (angular.isDefined(result.success)) {
-                                                if (result.success === true) {
-                                                    showNotify(result.msg, 'success');
-                                                    document.location = result.url;
-                                                    //sTravis.downloadFileHelper(result.url, result.fileName);
-                                                } else {
-                                                    showNotify(result.msg, 'warning');
-                                                }
-                                            } else {
-                                                showNotify("Error.", 'danger');
-                                            }
-                                        } else {
-                                            showNotify("Error.", 'danger');
-                                        }
-                                    }, function (error) {
-                                        console.error(error);
-                                    }).finally(function () {
-                                        $scope.exportDownloading = false;
-                                    });
-                                } else {
-                                    console.error('[Dir]travis-export-btn: Invalid short code.');
-                                }
-                            }
-                        } else {
-                            console.error('[Dir]travis-export-btn: Invalid current total.');
-                        }
-                    });
-                }
-            }
-        })
-
         // Some shortly functions
         .factory('ftCommonHelper', function () {
             return {

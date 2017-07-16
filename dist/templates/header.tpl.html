@@ -1,9 +1,7 @@
 <thead>
 <tr>
-    <th width="2%">
-        <div class="ui checkbox" sm-checkbox-bind="">
-            <input type="checkbox" ng-model="config.$selectAll" name="{{config.$tableName}}-select-all">
-        </div>
+    <th width="40">
+        <sm-checkbox model="config.$selectAll" name="{{config.$tableName}}-select-all"></sm-checkbox>
     </th>
     <th ng-class="{'{{col.textAlign}} aligned': col.textAlign, 'sortable': col.canSort || col.multiSort}"
         ng-if="col.display"

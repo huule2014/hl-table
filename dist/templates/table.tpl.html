@@ -1,14 +1,15 @@
 <div class="hl-table-container" ng-cloak>
+    <!-- hl-table-setting -->
     <hl-table-setting columns="columns" config="config"></hl-table-setting>
     <!-- hl-table -->
-    <table id="{{config.$tableName}}" class="hl-table ui selectable celled table">
+    <table id="{{config.$tableName}}" class="hl-table ui bottom attached selectable celled table">
         <!-- hl-header -->
-        <thead hl-table-header columns="columns" config="config" class="full-width" ></thead>
+        <thead hl-table-header columns="columns" config="config" class="full-width"></thead>
         <!-- hl-body -->
         <tbody ng-show="config.$dataLoading">
         <tr>
             <td colspan="{{columns.length + 1}}">
-                Data loading...
+                <div class="ui text inline centered loader active">Loading</div>
             </td>
         </tr>
         </tbody>
@@ -16,5 +17,6 @@
         <!-- hl-footer -->
         <tfoot hl-table-footer columns="columns" config="config"></tfoot>
     </table>
-    <!-- hl-table -->
+    <!-- hl-table-setting -->
+    <hl-table-pagination config="config"></hl-table-pagination>
 </div>

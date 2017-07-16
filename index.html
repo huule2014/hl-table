@@ -9,6 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
     <link rel="stylesheet" type="text/css" href="bower_components/semantic/dist/semantic.min.css">
+    <link rel="stylesheet" type="text/css" href="dist/templates/hl-table-custom.css">
     <script src="bower_components/jquery/dist/jquery.min.js"></script>
     <script src="bower_components/semantic/dist/semantic.min.js"></script>
     <script src="custom.js"></script>
@@ -26,6 +27,7 @@
 </head>
 <body ng-controller="testCtrl">
 <div class="ui container">
+    {{config.$selectedItems}}
     <hl-table columns="columns" config="config">
         <hl-table-row ng-repeat="item in config.$dataList" primary-key="id">
             <hl-table-col>{{item.id}}</hl-table-col>
