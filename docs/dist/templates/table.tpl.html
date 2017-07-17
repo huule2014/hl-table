@@ -1,0 +1,24 @@
+<div class="hl-table-container" ng-cloak>
+    <!-- hl-table-setting -->
+    <hl-table-setting columns="columns" config="config"></hl-table-setting>
+    <!-- hl-table -->
+    <table id="{{config.$tableName}}" class="hl-table ui bottom attached selectable celled table unstackable">
+        <!-- hl-header -->
+        <thead hl-table-header columns="columns" config="config" class="full-width"></thead>
+        <!-- hl-body -->
+        <tbody ng-show="config.$dataLoading">
+        <tr>
+            <td colspan="{{columns.length + 1}}">
+                <div class="ui text inline centered loader active">
+                    {{'LOADING'|translate}}
+                </div>
+            </td>
+        </tr>
+        </tbody>
+        <tbody ng-hide="config.$dataLoading" ng-transclude></tbody>
+        <!-- hl-footer -->
+        <tfoot hl-table-footer columns="columns" config="config"></tfoot>
+    </table>
+    <!-- hl-table-setting -->
+    <hl-table-pagination config="config"></hl-table-pagination>
+</div>

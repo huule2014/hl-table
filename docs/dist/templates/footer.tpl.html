@@ -1,0 +1,44 @@
+<tfoot>
+<tr>
+    <th width="2%">
+        <input type="checkbox" ng-model="selectAllRow" ng-change="selectAll()">
+    </th>
+    <th ng-class="{'text-{{col.textAlign}}': col.textAlign, 'sort-able': col.canSort == true && !col.multiSort, 'sort-asc': col.canSort == true && !col.multiSort && col.field == orderBy && ascDesc == 'DESC', 'sort-desc': col.canSort == true && !col.multiSort && col.field == orderBy && ascDesc == 'ASC'}"
+        ng-if="col.display"
+        ng-repeat="(colIdx, col) in columns"
+        ng-click="col.canSort == true && !col.multiSort ? sortField(col.field):''"
+        ng-style="{'width': col.width}">
+        <label ng-style="{'cursor': (col.canSort ? 'pointer' : '')}" ng-if="!col.multiSort"
+               bind-html-compile="col.label"></label>
+
+        <div ng-if="col.multiSort">
+            <label bind-html-compile="col.label"></label>
+            <label>Sort</label>
+            <div>
+                <ul>
+                    <li>
+                        <a ng-click="sortField(col.field)"
+                           ng-class="{'md-bg-grey-100': col.canSort == true && col.field == orderBy}">
+                            <label bind-html-compile="col.settingLabel ? col.settingLabel : col.label"></label>
+                            <label class="uk-float-right">
+                                <i class="material-icons s18"
+                                   ng-bind="col.can_sort == true && col.field == order_by && ascDesc == 'DESC' ? 'keyboard_arrow_down' : (col.canSort == true && col.field == orderBy && ascDesc == 'ASC' ? 'keyboard_arrow_up' : 'sort')"></i>
+                            </label>
+                        </a>
+                    </li>
+                    <li ng-repeat="sortCol in col.multiSort">
+                        <a ng-click="sortField(sortCol.field)"
+                           ng-class="{'md-bg-grey-100': col.canSort == true && sortSol.field == orderBy}">
+                            {{sortCol.title}}
+                            <label class="uk-float-right">
+                                <i class="material-icons s18"
+                                   ng-bind="col.canSort == true && sortCol.field == orderBy && ascDesc == 'DESC' ? 'keyboard_arrow_down' : (col.canSort == true && sortCol.field == orderBy && ascDesc == 'ASC' ? 'keyboard_arrow_up' : 'sort')"></i>
+                            </label>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </th>
+</tr>
+</tfoot>

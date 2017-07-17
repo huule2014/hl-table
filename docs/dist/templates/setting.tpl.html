@@ -1,0 +1,70 @@
+<div class="ui top attached menu">
+    <div class="ui item">
+        <div class="ui icon input" ng-class="{'loading': config.$dataSearching}">
+            <input ng-model="config.params.search" type="text" placeholder="{{'SEARCH'|translate}}...">
+            <i class="search link icon" ng-click="config.$searchData()"></i>
+        </div>
+    </div>
+    <div ng-show="config.advancedFilter" class="ui basic dropdown icon item" sm-dropdown-bind="{action: 'nothing'}">
+        <i class="filter icon"></i>
+        <div class="menu">
+            <div class="scrolling menu vertical" style="min-width: 200px !important;">
+                <h5 class="ui header">{{'FILTER'|translate}}</h5>
+                <div ng-include="config.advancedFilter.templatePath"></div>
+                <div>
+                    <div class="ui item">
+                        <button ng-click="config.$reloadData()" class="mini ui blue icon button">
+                            {{'SUBMIT'|translate}}
+                        </button>
+                        <button ng-click="config.$resetFilter()" class="mini ui icon button">
+                            {{'DEFAULT'|translate}}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="ui basic dropdown icon item" sm-dropdown-bind="">
+        <i class="translate icon"></i>
+        <div class="menu">
+            <div class="scrolling menu vertical" style="max-height: 200px !important;">
+                <h5 class="ui header">{{'LANGUAGE'|translate}}</h5>
+                <div class="ui item">
+                    <a ng-click="$root.changeLanguage('vi')"><i class="vn flag"></i>{{'VN'|translate}}</a>
+                </div>
+                <div class="ui item">
+                    <a ng-click="$root.changeLanguage('en')"><i class="us flag"></i>{{'EN'|translate}}</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="right menu">
+        <a ng-class="{'ui {{tool.type}}': tool.type, 'item': true}"
+           ng-repeat="tool in config.tools|orderBy:'ordered'"
+           ng-click="tool.callback($event)"
+           sm-popup="tool.tooltip"
+           bind-html-compile="tool.template">
+        </a>
+        <div class="ui basic right dropdown icon item" sm-dropdown-bind="{action: 'nothing'}">
+            <i class="setting icon"></i>
+            <div class="menu">
+                <div class="scrolling menu">
+                    <h5 class="ui header">{{'DISPLAY'|translate}}</h5>
+                    <div ng-show="col.canHide" ng-repeat="col in columns" class="ui item checkbox">
+                        <sm-checkbox model="col.display"
+                                     name="{{::config.$tableName}}-col-display-{{::col.field}}"
+                                     label="{{col.settingTitle ? col.settingTitle : col.label}}">
+                        </sm-checkbox>
+                    </div>
+                    <h5 class="ui header">{{'FONT_SIZE'|translate}}</h5>
+                    <div class="ui right action labeled input">
+                        <input ng-model="theme.fontSize" type="number" min="8" max="36"
+                               placeholder="{{'FONT_SIZE'|translate}}(px)">
+                        <a ng-click="theme.fontSize = 14" href="javascript:void(0);"
+                           class="ui teal button">Reset</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

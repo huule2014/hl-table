@@ -1,0 +1,13 @@
+{
+  "SEARCH": "Tìm kiếm",
+  "FILTER": "Bộ lọc",
+  "LOADING": "Đang tải...",
+  "DISPLAY": "Hiển thị",
+  "FONT_SIZE": "Kích thước font chữ",
+  "SUBMIT": "Lọc",
+  "DEFAULT": "Mặc định",
+  "LANGUAGE": "Ngôn ngữ",
+  "VN": "Tiếng việt",
+  "EN": "English",
+  "PAGINATION": "Đang hiển thị {{from}} - {{to}} của {{total}} dòng"
+}

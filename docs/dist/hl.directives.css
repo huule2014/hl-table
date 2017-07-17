@@ -1,0 +1,35 @@
+.hl-table-container input, .hl-table-container textarea, .hl-table-container .ui.button {
+    font-family: 'Arial';
+}
+
+.hl-table-container .checkbox, .hl-table-container .radio {
+    margin: auto !important;
+}
+
+.hl-table th.sortable:hover {
+    cursor: pointer;
+}
+
+.ui.table.hl-table td[align="left"] {
+    text-align: left;
+}
+
+.ui.table.hl-table td[align="right"] {
+    text-align: right;
+}
+
+.ui.table.hl-table td[align="center"] {
+    text-align: center;
+}
+
+.ui.table.hl-table td[align="justify"] {
+    text-align: justify;
+}
+
+.ui.menu .dropdown.item .menu {
+    overflow: hidden;
+}
+
+.menu.scrolling {
+    overflow: auto !important;
+}
