@@ -1,10 +1,10 @@
 if (angular.isDefined(angular)) {
     angular
-        .module('testApp', ['hlTableModule'])
+        .module('hlTableDocsApp', ['hlTableModule'])
         .config(function (hlTableConfigProvider) {
             hlTableConfigProvider.setTemplatePath('dist/templates/');
         })
-        .controller('testCtrl', function ($rootScope, $scope, $timeout, $log, hlUrlHelper, hlTableConfig, hlDataHelper) {
+        .controller('hlTableDocsCtrl', function ($rootScope, $scope, $timeout, $log, hlUrlHelper, hlTableConfig, hlDataHelper) {
             $scope.config = {
                 // Define a unique name
                 name: 'test',
@@ -52,7 +52,7 @@ if (angular.isDefined(angular)) {
                 }, {
                     field: 'action',
                     label: 'Action',
-                    width: '6%',
+                    width: '80px',
                     textAlign: 'center',
                     canSort: false,
                     ordered: 1

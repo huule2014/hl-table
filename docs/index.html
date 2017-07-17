@@ -2,14 +2,24 @@
 <html lang="en" ng-app="hlTableDocsApp">
   <head>
     <meta charset="UTF-8">
-    <title>Cayman</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#157878">
-    <link rel="stylesheet" href="css/normalize.css">
-    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" href="css/cayman.css">
+    <base href="/hl-table/"/>
+    <title>hl-table</title>
 	
-	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.3/angular.min.js" type="text/javascript"></script>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="theme-color" content="#157878">
+	
+    <link rel="stylesheet" href="docs/css/normalize.css">
+    <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' type='text/css'>
+    <link rel="stylesheet" href="docs/css/cayman.css">
+	
+    <link href="bower_components/semantic/dist/semantic.min.css" rel="stylesheet">
+
+    <style>
+        [ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
+            display: none !important;
+        }
+    </style>
   </head>
   <body ng-controller="hlTableDocsCtrl">
     <section class="page-header">
@@ -34,6 +44,54 @@
       <a id="user-content-header-1" class="anchor" href="#header-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>Header 1</h1>
 
       <p>This is a normal paragraph following a header. Bacon ipsum dolor sit amet t-bone doner shank drumstick, pork belly porchetta chuck sausage brisket ham hock rump pig. Chuck kielbasa leberkas, pork bresaola ham hock filet mignon cow shoulder short ribs biltong.</p>
+	  
+	  <div class="ui container">
+    <script id="myModule/advancedFilter.tpl.html" type="text/ng-template">
+        <div class="ui item">
+            <div class="ui form">
+                <div class="inline">
+                    <div class="field">
+                        <sm-radio name="filter-published" model="config.$filter.published" label="Published"
+                                  value="'1'">
+                    </div>
+                    <div class="field">
+                        <sm-radio name="filter-published" model="config.$filter.published" label="Unpublished"
+                                  value="'0'">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="ui item">
+            <div class="ui form">
+                <div class="field">
+                    <label>Another field</label>
+                    <input ng-model="config.$filter.anotherField" type="text" name="another-field-search"
+                           placeholder="Another search...">
+                </div>
+            </div>
+        </div>
+    </script>
+    <hl-table columns="columns" config="config">
+        <hl-table-row ng-repeat="item in config.$dataList" primary-key="id">
+            <hl-table-col column="col" ng-repeat="col in columns|orderBy:'ordered'">
+                <div ng-switch="col.field">
+                    <div ng-switch-when="id">{{item.id}}</div>
+                    <div ng-switch-when="name">This is a long long long long long content</div>
+                    <div ng-switch-when="published">
+                        <h3>
+                            <i class="icon"
+                               ng-class="{'check circle ui green text': item.published == '1', 'remove circle ui red text': item.published == '0'}"></i>
+                        </h3>
+                    </div>
+                    <div ng-switch-when="action">
+                        <i class="edit icon"></i>
+                        <i class="trash outline icon"></i>
+                    </div>
+                </div>
+            </hl-table-col>
+        </hl-table-row>
+    </hl-table>
+</div>
 
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/jasonlong/cayman-theme">Cayman</a> is maintained by <a href="https://github.com/jasonlong">jasonlong</a>.</span>
@@ -41,14 +99,17 @@
       </footer>
 
     </section>
-	<script type="text/javascript">
-		angular
-		.module('hlTableDocsApp', [])
-		.controller('hlTableDocsCtrl', function($scope){
-			$scope.project = {
-				name: 'hl-table'
-			};
-		});
-	</script>
+
+    <script src="bower_components/jquery/dist/jquery.min.js" type="text/javascript"></script>
+    <script src="bower_components/semantic/dist/semantic.min.js" type="text/javascript"></script>
+
+    <script src="bower_components/angular/angular.min.js" type="text/javascript"></script>
+    <script src="bower_components/angular-sanitize/angular-sanitize.min.js" type="text/javascript"></script>
+    <script src="bower_components/angular-translate/angular-translate.min.js" type="text/javascript"></script>
+    <script src="bower_components/angular-translate-loader-partial/angular-translate-loader-partial.min.js" type="text/javascript"></script>
+    <script src="bower_components/oclazyload/dist/ocLazyLoad.min.js" type="text/javascript"></script>
+    <script src="bower_components/semantic-ui-angular-jquery/angular-semantic-ui.min.js" type="text/javascript"></script>
+    <script src="dist/hl.directives.js" type="text/javascript"></script>
+    <script src="docs/app.js" type="text/javascript"></script>
   </body>
 </html>
