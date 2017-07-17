@@ -30,17 +30,22 @@
             'ngSanitize',
             'pascalprecht.translate'
         ])
-        .config(function ($ocLazyLoadProvider, $translateProvider) {
+        .config(function ($ocLazyLoadProvider) {
             $ocLazyLoadProvider.config({
                 debug: false,
                 events: false,
                 modules: []
             });
+        })
+        .run(function ($rootScope, $translate, $translatePartialLoader) {
 
-            $translateProvider.useLoader('$translatePartialLoader', {
-                urlTemplate: 'dist/languages/{lang}.json'
-            });
-            $translateProvider.useSanitizeValueStrategy(null);
+            $translatePartialLoader.addPart('default');
+            $translate.use('vi');
+            $translate.refresh();
+
+            $rootScope.changeLanguage = function (langCode) {
+                $translate.use(langCode);
+            }
         })
         .provider('hlTableConfig', function () {
             return {
@@ -70,11 +75,6 @@
                     }
                 }
             }
-        })
-        .run(function ($ocLazyLoad, hlTableConfig) {
-            // Load default ocLazyLoad modules
-
-            $ocLazyLoad.load([hlTableConfig.templatePath + 'hl-table-custom.css']);
         })
         // URL helper for all directives
         .factory('hlUrlHelper', function ($browser, $log) {
@@ -115,15 +115,12 @@
                 }
             }
         })
-        .factory('hlDataHelper', function ($rootScope, $q, $timeout, $http, $log, $translatePartialLoader, $translate, hlElementHelper) {
+        .factory('hlDataHelper', function ($rootScope, $q, $timeout, $http, $log, hlElementHelper) {
             var reloadingData = [];
-            
-            $translatePartialLoader.addPart('default');
-            $translate.use('vi');
-            $translate.refresh();
 
             return {
                 run: function (config, primaryKey) {
+
                     if (angular.isDefined(config) && angular.isDefined(config.name)) {
 
                         /** Set select all status */

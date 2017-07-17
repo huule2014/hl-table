@@ -1,9 +1,9 @@
-.hl-table-container {
-
+.hl-table-container input, .hl-table-container textarea, .hl-table-container .ui.button {
+    font-family: 'Arial';
 }
 
-.hl-table-container {
-
+.hl-table-container .checkbox, .hl-table-container .radio {
+    margin: auto !important;
 }
 
 .hl-table th.sortable:hover {

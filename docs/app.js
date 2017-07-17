@@ -1,10 +1,19 @@
 if (angular.isDefined(angular)) {
     angular
         .module('hlTableDocsApp', ['hlTableModule'])
-        .config(function (hlTableConfigProvider) {
+        .config(function (hlTableConfigProvider, $translateProvider) {
             hlTableConfigProvider.setTemplatePath('dist/templates/');
+            $translateProvider.useLoader('$translatePartialLoader', {
+                urlTemplate: 'dist/languages/{lang}.json'
+            });
+            $translateProvider.useSanitizeValueStrategy(null);
         })
         .controller('hlTableDocsCtrl', function ($rootScope, $scope, $timeout, $log, hlUrlHelper, hlTableConfig, hlDataHelper) {
+            $scope.project = {
+                name: 'hl-table',
+                version: '0.0.1'
+            };
+
             $scope.config = {
                 // Define a unique name
                 name: 'test',

@@ -1,4 +1,13 @@
 {
   "SEARCH": "Search",
-  "LOADING": "Loading"
+  "FILTER": "Filter",
+  "LOADING": "Loading...",
+  "DISPLAY": "Display",
+  "FONT_SIZE": "Font size",
+  "SUBMIT": "Submit",
+  "DEFAULT": "Default",
+  "LANGUAGE": "Language",
+  "VN": "Vietnamese",
+  "EN": "English",
+  "PAGINATION": "Showing from {{from}} to {{to}} of {{total}} entries"
 }

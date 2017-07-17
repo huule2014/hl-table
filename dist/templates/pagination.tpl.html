@@ -1,16 +1,15 @@
 <div class="ui stackable two column grid">
     <div class="column">
-        <div ng-show="numLinks > 1">
-            <span>Showing {{fromRow}} to {{toRow}} of {{config.$totalRows}} entries</span>
+        <div ng-show="numLinks > 0">
+            <span translate="PAGINATION" translate-values="{from: fromRow, to: toRow, total: config.$totalRows}"></span>
         </div>
     </div>
     <div class="right aligned column">
-        <div ng-show="numLinks > 1">
-            <div ng-show="pageLimit > 5">
-                <label>Go to</label>
-                <input type="number" class="md-input uk-text-small"
-                       list-enter-event="goPage(config.params.pageNum - 1)"/>
-            </div>
+        <div ng-hide="true">
+            <label>Go to</label>
+            <input type="number" class="md-input uk-text-small"
+                   ng-model="config.params.pageNum" ng-model-options="{updateOn: 'blur', debounce: 500}"
+                   list-enter-event="goPage(config.params.pageNum - 1)"/>
         </div>
         <div ng-if="pageLinks.length > 1">
             <div class="ui pagination menu">
