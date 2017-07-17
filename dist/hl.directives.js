@@ -18,6 +18,7 @@
         selectAllVar = '$selectAll',
         selectedItemsVar = '$selectedItems',
         selectItemFunctionName = '$selectItem',
+        isSelectedFunctionName = '$isSelected',
         allPrimaryKey = '$allPrimaryKey',
         dataSearchingVar = '$dataSearching',
         searchDataFunctionName = '$searchData',
@@ -132,6 +133,10 @@
                             config[dataSearchingVar] = false;
                         }
 
+                        if (angular.isUndefined(config.multiLanguage)) {
+                            config.multiLanguage = false;
+                        }
+
                         if (angular.isDefined(config.name)
                             && reloadingData.indexOf(config.name) == -1
                             && angular.isDefined(config.params)
@@ -183,6 +188,23 @@
                                         config[selectedItemsVar].push(hlDataId);
                                     } else {
                                         config[selectedItemsVar].splice(config[selectedItemsVar].indexOf(hlDataId), 1);
+                                    }
+                                };
+                            }
+
+                            /**
+                             * Is selected item?
+                             */
+                            if (angular.isUndefined(config[isSelectedFunctionName])) {
+                                config[isSelectedFunctionName] = function (hlDataId) {
+                                    if (angular.isDefined(hlDataId)) {
+                                        if (angular.isUndefined(config[selectedItemsVar])) {
+                                            config[selectedItemsVar] = [];
+                                        }
+
+                                        return (config[selectedItemsVar].indexOf(hlDataId) > -1);
+                                    } else {
+                                        return false;
                                     }
                                 };
                             }
@@ -428,7 +450,7 @@
                     if (angular.isDefined($scope.primaryKey)) {
                         var checkboxColumn = angular.element('<td width="40">' +
                             '<div class="ui checkbox">' +
-                            '<input type="checkbox" ng-checked="config.$selectedItems.indexOf(item[\'' + $scope.primaryKey + '\']) > -1" ' +
+                            '<input type="checkbox" ng-checked="config.$isSelected(item[\'' + $scope.primaryKey + '\'])" ' +
                             'ng-click="config.$selectItem(item[\'' + $scope.primaryKey + '\'])" ' +
                             ' name="hl-row-check-box-{{item[\'' + $scope.primaryKey + '\']}}" >' +
                             '<label></label>' +
